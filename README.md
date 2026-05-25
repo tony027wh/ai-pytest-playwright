@@ -1,143 +1,205 @@
-# 🚀 AI pytest-Playwright Test Lab
+# AI pytest-Playwright Test Lab
 
-An end-to-end **AI-powered test automation pipeline** that:
-
-✔️ **Generates pytest-playwright tests** from plain-English user stories
-
-✔️ **Runs your pytest suite**
-
-✔️ **Analyzes failed tests using AI**, producing explanations, root causes, fix suggestions, and flakiness tips
-
-✔️ **Builds a beautifully styled HTML dashboard** of all AI results
-✔️ **Embedded UI reports** (AI analysis + Playwright HTML report with screenshots)
-✔️ **Fix with AI** to auto-apply test repairs and re-run
-
-✔️ **One-command workflow** using `python pipeline.py`
+An end-to-end AI-powered test automation pipeline that turns plain-English user stories into running Playwright tests, analyzes failures with Claude, and produces a styled HTML report.
 
 ---
 
-## 📸 Demo Overview
+## Table of Contents
 
-This workflow turns simple input like:
-
-**`stories/login.md`**
-
-```
-As a user, I want to log in with valid credentials so I can access my dashboard.
-
-Acceptance criteria:
-- Navigate to /login
-- Fill in username tomsmith
-- Fill in password SuperSecretPassword!
-- Click the Login button
-- Expect redirect to /secure
-```
-
-Into:
-
-* A generated pytest-playwright test
-* A full run
-* AI failure analysis
-* A glowing, animated HTML dashboard like this:
-
-**`ai-report.html`** (auto-opens):
-
-* Plain English explanation
-* Root cause analysis
-* Suggested test fixes
-* Flakiness mitigation
-* Styled cards, badges, gradients, animations
+1. [Tech Stack](#tech-stack)
+2. [Project Structure](#project-structure)
+3. [Installation](#installation)
+4. [Workflow: Run All Tests](#workflow-run-all-tests)
+5. [Workflow: Add a New Story and Test It](#workflow-add-a-new-story-and-test-it)
+6. [Individual Commands Reference](#individual-commands-reference)
+7. [UI Dashboard](#ui-dashboard)
+8. [Claude Code Skill](#claude-code-skill)
+9. [How AI Analysis Works](#how-ai-analysis-works)
+10. [Roadmap](#roadmap)
 
 ---
 
-## 🔧 Tech Stack
+## Tech Stack
 
-* **Python 3.13+**
-* **pytest + pytest-playwright**
-* **Claude Code CLI** (no API keys needed — uses your Claude Code subscription)
-* **FastAPI** server for the UI
-* **Custom HTML reporting with external CSS**
-* **Dark-mode dashboard UI**
+- **Python 3.13+**
+- **pytest + pytest-playwright**
+- **Claude Code CLI** — no API keys needed, uses your Claude Code subscription
+- **FastAPI** for the local UI server
+- **Dark-mode HTML dashboard** with external CSS
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 ai-pytest-playwright/
 │
-├── stories/
-│   └── login.md               # Your natural language test cases
-│
-├── tests/
-│   └── test_login.py          # Auto-generated pytest-playwright test
-│   └── .ai-backups/           # AI fix backups (hidden in UI)
+├── stories/                       # Plain-English test specifications (.md)
+├── tests/                         # Auto-generated pytest-playwright tests
+│   └── .ai-backups/               # Backups created before AI fixes
 │
 ├── analyze/
-│   └── analyze_failures.py    # AI engine (JSON + HTML dashboard)
-│
+│   └── analyze_failures.py        # AI failure analysis engine
 ├── utils/
-│   ├── claude_client.py       # Claude CLI subprocess helpers
-│   └── test_helpers.py        # Shared test utilities
-│
+│   ├── claude_client.py           # Claude CLI subprocess helpers
+│   └── test_helpers.py            # Shared test utilities
 ├── server/
-│   └── server.py              # FastAPI server (mirrors JS API exactly)
+│   └── server.py                  # FastAPI server
+├── ui/                            # Frontend (index.html, ui.js, ui.css, modules/)
 │
-├── ui/                        # Frontend (same UI as JS version)
-│   ├── index.html
-│   ├── ui.js / ui.css
-│   └── modules/               # Editor, run console, AI wizard, etc.
-│
-├── ai-analysis.json            # AI output (JSON)
-├── ai-report.html              # Human-friendly HTML dashboard
-├── ai-report.css               # Dashboard styling
-├── playwright-report/          # pytest-html report (screenshots)
-├── pytest-report.json          # Machine-readable pytest output
-│
-├── generate_test.py            # Converts stories → pytest tests
-├── pipeline.py                 # Full pipeline orchestrator
-├── conftest.py                 # pytest + Playwright fixtures
-├── pytest.ini                  # pytest configuration
-├── requirements.txt            # Python dependencies
-└── README.md                   # (this file)
+├── generate_test.py               # Converts stories → pytest tests
+├── pipeline.py                    # Full pipeline orchestrator
+├── conftest.py                    # pytest + Playwright fixtures
+├── pytest.ini                     # pytest configuration
+└── requirements.txt
+```
+
+**Data flow:**
+```
+stories/*.md
+  → generate_test.py
+      → tests/test_*.py
+          → pytest  →  pytest-report.json  +  playwright-report/
+              → analyze_failures.py
+                  → ai-analysis.json  +  ai-report.html
 ```
 
 ---
 
-## ⚙️ Installation
+## Installation
 
 ```bash
 git clone https://github.com/andrewtdinh/ai-pytest-playwright.git
 cd ai-pytest-playwright
 python -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 playwright install
 ```
 
-**Note:** No API keys needed! The project uses the **Claude Code CLI** (`claude` command) which is included with Claude Code. If you haven't installed Claude Code yet, [get it here](https://claude.ai/code).
+No API keys required. The project uses the **Claude Code CLI** (`claude` command) bundled with your Claude Code subscription. [Get Claude Code here](https://claude.ai/code) if you haven't installed it.
 
 ---
 
-## 🧠 One-Command Workflow
+## Workflow: Run All Tests
 
-Run this to:
+Use this when you want to run the entire suite end-to-end.
 
-1. Generate tests from your stories
-2. Run all pytest-playwright tests
-3. Analyze failures using AI
-4. Build & open the HTML dashboard
+**Step 1 — Run the full pipeline**
 
 ```bash
 python pipeline.py
 ```
 
+This does four things in sequence:
+1. Generates pytest tests from every story in `stories/`
+2. Runs the full pytest suite
+3. Analyzes any failures with AI
+4. Builds and opens `ai-report.html` in your browser
+
+**Step 2 — Review the results**
+
+- `ai-report.html` — AI dashboard: plain-English explanations, root causes, fix suggestions, flakiness tips
+- `playwright-report/` — Traditional pytest-html report with screenshots
+- `pytest-report.json` — Raw machine-readable output
+
 ---
 
-## 👉 Individual Commands (Optional)
-## 🧭 UI Dashboard (Local)
+## Workflow: Add a New Story and Test It
 
-Run the UI:
+Use this when you've written a new story and only want to generate and run that one test.
+
+**Step 1 — Write your story**
+
+Create `stories/<slug>.md`. The filename stem becomes the test function name.
+
+```markdown
+Title: Login - valid credentials
+
+Base URL: https://the-internet.herokuapp.com
+
+As a user, I want to log in with valid credentials so I can access the secure area.
+
+Acceptance criteria:
+- Navigate to `/login`
+- Fill in username `tomsmith`
+- Fill in password `SuperSecretPassword!`
+- Click the Login button
+- Expect redirect to `/secure`
+- Expect the success flash message to contain: `You logged into a secure area!`
+```
+
+Requirements:
+- Always include `Base URL:` — the generator uses it to build full URLs
+- Use relative paths in acceptance criteria (`/login`, not the full URL)
+- The slug (filename stem) must be snake_case: `add_remove_elements.md` → `test_add_remove_elements.py`
+
+**Step 2 — Generate the test**
+
+```bash
+python generate_test.py --story <slug>.md
+```
+
+Example:
+```bash
+python generate_test.py --story login.md
+```
+
+This creates `tests/test_login.py`. Review it and adjust any locators if needed.
+
+**Step 3 — Run only that test**
+
+```bash
+python -m pytest tests/test_<slug>.py -v
+```
+
+Example:
+```bash
+python -m pytest tests/test_login.py -v
+```
+
+**Step 4 — If it fails, get AI analysis**
+
+```bash
+python -m pytest tests/test_login.py -v --json-report --json-report-file=pytest-report.json
+python analyze/analyze_failures.py --html
+```
+
+Or use the pipeline shortcut for steps 2–4 in one command:
+
+```bash
+python pipeline.py --story login.md --test test_login.py
+```
+
+---
+
+## Individual Commands Reference
+
+```bash
+# Generate tests
+python generate_test.py                          # all stories
+python generate_test.py --story login.md         # one story
+
+# Run tests
+python -m pytest                                 # all tests
+python -m pytest tests/test_login.py -v          # one test
+python -m pytest --json-report --json-report-file=pytest-report.json  # with JSON output
+
+# Analyze failures (requires pytest-report.json)
+python analyze/analyze_failures.py               # JSON output only
+python analyze/analyze_failures.py --html        # JSON + HTML report (auto-opens)
+
+# Full pipeline
+python pipeline.py                               # all stories + all tests
+python pipeline.py --story login.md --test test_login.py  # one story + one test
+
+# UI server
+uvicorn server.server:app --port 5173
+```
+
+---
+
+## UI Dashboard
 
 ```bash
 uvicorn server.server:app --port 5173
@@ -145,209 +207,63 @@ uvicorn server.server:app --port 5173
 
 Open `http://localhost:5173`.
 
-### What you can do in the UI
+**Run Bar** — trigger the full pipeline or individual steps (Generate / Run Tests / Analyze) with a live status chip.
 
-**Run Bar**
-- Run full pipeline or individual steps (Generate / Run Tests / Analyze)
-- Live status chip: Idle / Running / Failed / Passed
+**Editor** — write or edit stories and tests with validation, upload up to 5 stories at once, or use the AI Story Assistant wizard to build a story from requirements and expected outcomes.
 
-**Editor**
-- Single editor for stories and tests (toggle mode)
-- Story validation required before save
-- Upload up to 5 stories at a time
-- AI Story Assistant (wizard) builds a story from requirements + optional selectors/steps + expected outcome
+**Saved Stories / Generated Tests** — browse, edit, delete, or run individual stories or tests from the sidebar.
 
-**Saved Stories**
-- Refresh, delete all, edit
-- Per‑story Generate button (creates tests just for that story)
+**Run Console** — step-by-step progress (Validate → Save → Generate → Run → Analyze → Report), live logs, and a **Fix with AI** button on failed tests that auto-applies a Claude-generated fix, creates a backup in `tests/.ai-backups/`, re-runs the test, and shows a fix summary.
 
-**Generated Tests**
-- Refresh, delete all, edit
-- Per‑test Run button (runs only that test)
-
-**Run Console**
-- Stepper: Validate → Save → Generate → Run → Analyze → Report
-- Live logs, inline errors, copy stdout/stderr
-- "Open report" CTA when available
-- Report tabs:
-  - AI Analysis (embedded `ai-report.html`)
-  - Traditional Report (embedded Playwright HTML report)
-- Fix with AI button for failed tests:
-  - Auto-applies changes, re-runs the test, and shows a fix summary
-
-**Safety / UX**
-- Custom confirm modal for deletes
-- Buttons disabled during runs
-
-### AI Story Assistant
-
-The UI includes an AI Story Assistant wizard that helps craft stories in a structured format:
-
-- Collects requirements, selectors/UI elements, path/steps, and expected outcome
-- Generates a story that fits the editor format
-- Inserts the story directly into the editor
-
-Use it when you want consistent story structure or faster authoring.
-
-### Fix with AI
-
-When a test fails, the Report section lists failed tests with a **Fix with AI** button.
-
-What it does:
-
-- Sends full context to Claude via the CLI (test file, stdout/stderr, error context, related story)
-- Auto-applies the updated test file
-- Creates a backup in `tests/.ai-backups/`
-- Re-runs the fixed test and shows a short fix summary in the Run Console
-
-No API keys required — uses Claude Code CLI.
-
-
-### Generate tests from your stories
-
-```bash
-python generate_test.py
-# or for a single story:
-python generate_test.py --story login.md
-```
-
-Creates pytest test files under `tests/`.
+**Report Tabs** — embedded AI analysis report and traditional Playwright HTML report with screenshots, side by side.
 
 ---
 
-### Run the pytest-playwright suite
+## Claude Code Skill
 
-```bash
-python -m pytest
-```
+This repo ships a Claude Code skill at `.claude/skills/pytest-playwright/SKILL.md`.
 
-Saves `pytest-report.json`.
-Also writes the Playwright HTML report to `playwright-report/`.
-
----
-
-### Analyze failures using AI (JSON only)
-
-```bash
-python analyze/analyze_failures.py
-```
-
-Saves structured output in `ai-analysis.json`.
-
----
-
-### Build + open the HTML dashboard
-
-```bash
-python analyze/analyze_failures.py --html
-```
-
-Auto-opens `ai-report.html` in your browser.
-Also writes `ai-report.css` and updates the embedded UI report.
-
----
-
-## 🤖 How AI Analysis Works
-
-After pytest executes the tests, all failure metadata is passed to Claude via the CLI:
-
-* Error message
-* Stack trace
-* Test title + node ID
-* stdout/stderr logs
-* Original user story (for context)
-
-Claude returns structured HTML with:
-
-### **1. Plain-English Explanation**
-
-Why did this fail?
-
-### **2. Probable Root Causes**
-
-2–3 likely technical problems.
-
-### **3. Suggested Test Fixes**
-
-Specific pytest-playwright code improvements.
-
-### **4. Flakiness Mitigation**
-
-Ways to reduce intermittent failures.
-
----
-
-## 🎨 HTML Dashboard Themes & Features
-
-* Dark-mode
-* Animated gradient highlight bars
-* Glowing hover transitions
-* Status badges
-* Collapsible AI analysis sections
-* External CSS for easy editing
-* Radial gradients & neon accent hues
-
----
-
-## 🧪 Example AI Output (HTML)
+When working inside Claude Code, type:
 
 ```
-<h3>Plain-English Explanation</h3>
-<p>The success message never appeared...</p>
-
-<h3>Probable Root Causes</h3>
-<ul>
-  <li>Selector mismatch</li>
-  <li>API response delay</li>
-  <li>Redirect timing issue</li>
-</ul>
-
-<h3>Suggested Test Fixes</h3>
-<ul>
-  <li>Use page.wait_for_url('/dashboard')</li>
-  <li>Wait for stable locator instead of get_by_text</li>
-</ul>
-
-<h3>Flakiness Mitigation</h3>
-<p>Increase timeout or add a network idle wait.</p>
+/pytest-playwright
 ```
 
----
+This loads the skill and gives Claude full context about this project: the story format, test file conventions, all available commands, locator best practices, wait strategies, POM guidance, and an ad-hoc exploration pattern for quick locator debugging.
 
-## 📦 Environment Variables
-
-**No API keys required!** The project uses the **Claude Code CLI**, which authenticates with your Claude Code subscription.
-
-If you want to specify a particular Claude model (optional), use:
-```bash
-claude --model claude-opus-4-7
-```
-
-This sets the model for all subsequent `claude -p` commands during the pipeline run.
+**When to use it:**
+- Writing a new story or test file
+- Debugging a failing test
+- Asking Claude to explain a locator or wait strategy
+- Getting help with the full pipeline
 
 ---
 
-## 🧭 Roadmap & Enhancements
+## How AI Analysis Works
 
-* Multi-story batch generation
-* Test-to-story reverse engineering
-* Hit-map UI of frequent failures
-* CI pipeline integration
-* Slack/Teams bot that posts AI insights
-* Flaky test scoring over time
+After pytest runs, failure metadata is passed to Claude via the CLI:
+
+- Error message and full traceback
+- Test node ID
+- stdout/stderr logs
+- The original user story (for context about intent)
+
+Claude returns a structured HTML snippet for each failure containing:
+
+1. **Plain-English Explanation** — why it likely failed, grounded in the real behavior of the page under test
+2. **Probable Root Causes** — 2–3 concrete technical causes
+3. **Suggested Test Fixes** — specific pytest-playwright code improvements
+4. **Flakiness Mitigation** — ways to reduce intermittent failures
+
+Output is written to `ai-analysis.json` (structured data) and `ai-report.html` (styled dashboard).
 
 ---
 
-## 💬 Contributing
+## Roadmap
 
-Pull requests welcome!
-
-Open issues for bugs, ideas, or UX/UI enhancements.
-
----
-
-## ⭐ Star the repo if you like it!
-
-This project helps show how AI can supercharge real-world QA automation.
-
-Let's build the future of testing. 🔥
+- Multi-story batch generation
+- Test-to-story reverse engineering
+- Flaky test scoring over time
+- Hit-map UI of frequent failures
+- CI pipeline integration
+- Slack/Teams bot that posts AI insights
