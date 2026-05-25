@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# pytest
+.pytest_cache/
+pytest-report.json
+playwright-report/
+test-results/
+tests/*.py
+!tests/.gitkeep
+
+# Generated reports
+ai-report.html
+ai-report.css
+ai-analysis.json
+
+# dotenv
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db

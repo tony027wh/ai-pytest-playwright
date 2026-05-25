@@ -1,0 +1,7 @@
+pytest
+pytest-playwright
+pytest-json-report
+pytest-html
+fastapi
+uvicorn[standard]
+python-dotenv

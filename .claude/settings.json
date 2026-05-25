@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(git status)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git pull:*)",
+      "Bash(git push:*)",
+      "Bash(git checkout:*)",
+      "Bash(python generate_test.py*)",
+      "Bash(python analyze/analyze_failures.py*)",
+      "Bash(python pipeline.py*)",
+      "Bash(python server/server.py*)",
+      "Bash(python -m pytest*)",
+      "Bash(pytest*)",
+      "Bash(uvicorn*)",
+      "Bash(pip install*)",
+      "Bash(playwright install*)",
+      "Bash(rg:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(git push origin main --force)",
+      "Bash(git reset --hard)"
+    ]
+  }
+}
