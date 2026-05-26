@@ -15,7 +15,8 @@ An end-to-end AI-powered test automation pipeline that turns plain-English user 
 7. [UI Dashboard](#ui-dashboard)
 8. [Claude Code Skill](#claude-code-skill)
 9. [How AI Analysis Works](#how-ai-analysis-works)
-10. [Roadmap](#roadmap)
+10. [Cross-Repo Utility Design](#cross-repo-utility-design)
+11. [Roadmap](#roadmap)
 
 ---
 
@@ -38,30 +39,43 @@ ai-pytest-playwright/
 ├── tests/                         # Auto-generated pytest-playwright tests
 │   └── .ai-backups/               # Backups created before AI fixes
 │
-├── analyze/
-│   └── analyze_failures.py        # AI failure analysis engine
-├── utils/
-│   ├── claude_client.py           # Claude CLI subprocess helpers
-│   └── test_helpers.py            # Shared test utilities
-├── server/
-│   └── server.py                  # FastAPI server
-├── ui/                            # Frontend (index.html, ui.js, ui.css, modules/)
+├── shared_utils/                  # Reusable utility library (copy to any repo)
+│   ├── adapters/
+│   │   └── base.py                # AppAdapter ABC — abstract interface for per-repo behavior
+│   └── core/
+│       ├── config_loader.py       # Loads test_config.yaml, resolves ${ENV_VAR:-default}
+│       ├── retry.py               # retry() and wait_for() helpers
+│       └── assertions.py         # SoftAssertions — collect failures, raise at end
 │
-├── generate_test.py               # Converts stories → pytest tests
-├── pipeline.py                    # Full pipeline orchestrator
-├── conftest.py                    # pytest + Playwright fixtures
-├── pytest.ini                     # pytest configuration
+├── adapters/
+│   └── the_internet_adapter.py   # Concrete AppAdapter for this repo's target app
+│
+├── analyze/
+│   └── analyze_failures.py       # AI failure analysis engine
+├── utils/
+│   ├── claude_client.py          # Claude CLI subprocess helpers
+│   └── test_helpers.py           # Shared test utilities
+├── server/
+│   └── server.py                 # FastAPI server
+├── ui/                           # Frontend (index.html, ui.js, ui.css, modules/)
+│
+├── test_config.yaml              # Repo-level config: environments, browser, auth, routes
+├── generate_test.py              # Converts stories → pytest tests
+├── pipeline.py                   # Full pipeline orchestrator
+├── conftest.py                   # pytest + Playwright fixtures (config-driven)
+├── pytest.ini                    # pytest configuration
 └── requirements.txt
 ```
 
 **Data flow:**
 ```
-stories/*.md
-  → generate_test.py
-      → tests/test_*.py
-          → pytest  →  pytest-report.json  +  playwright-report/
-              → analyze_failures.py
-                  → ai-analysis.json  +  ai-report.html
+test_config.yaml  ←─ conftest.py  ←─ adapters/the_internet_adapter.py
+                                        │
+stories/*.md                            │ base_url, browser settings, auth
+  → generate_test.py                    │
+      → tests/test_*.py ───────────────→ pytest  →  pytest-report.json  +  playwright-report/
+                                              → analyze_failures.py
+                                                  → ai-analysis.json  +  ai-report.html
 ```
 
 ---
@@ -116,8 +130,6 @@ Create `stories/<slug>.md`. The filename stem becomes the test function name.
 ```markdown
 Title: Login - valid credentials
 
-Base URL: https://the-internet.herokuapp.com
-
 As a user, I want to log in with valid credentials so I can access the secure area.
 
 Acceptance criteria:
@@ -129,10 +141,10 @@ Acceptance criteria:
 - Expect the success flash message to contain: `You logged into a secure area!`
 ```
 
-Requirements:
-- Always include `Base URL:` — the generator uses it to build full URLs
-- Use relative paths in acceptance criteria (`/login`, not the full URL)
-- The slug (filename stem) must be snake_case: `add_remove_elements.md` → `test_add_remove_elements.py`
+Notes:
+- **`Base URL:` is optional.** If omitted, `generate_test.py` uses the default from `test_config.yaml` (`environments.<default_env>.base_url`). Only include `Base URL:` when the story targets a *different* site than the repo default.
+- Use relative paths in acceptance criteria (`/login`, not the full URL).
+- The slug (filename stem) must be snake_case: `add_remove_elements.md` → `test_add_remove_elements.py`.
 
 **Step 2 — Generate the test**
 
@@ -151,11 +163,6 @@ This creates `tests/test_login.py`. Review it and adjust any locators if needed.
 
 ```bash
 python -m pytest tests/test_<slug>.py -v
-```
-
-Example:
-```bash
-python -m pytest tests/test_login.py -v
 ```
 
 **Step 4 — If it fails, get AI analysis**
@@ -256,6 +263,102 @@ Claude returns a structured HTML snippet for each failure containing:
 4. **Flakiness Mitigation** — ways to reduce intermittent failures
 
 Output is written to `ai-analysis.json` (structured data) and `ai-report.html` (styled dashboard).
+
+---
+
+## Cross-Repo Utility Design
+
+`shared_utils/` is a portable utility library built to work across multiple repos targeting different applications.
+
+### How it works
+
+`test_config.yaml` (one per repo) declares the target app's properties:
+
+```yaml
+app:
+  name: "my-app"
+  default_env: "${TEST_ENV:-staging}"
+
+environments:
+  staging:
+    base_url: "https://staging.my-app.com"
+  production:
+    base_url: "https://my-app.com"
+
+browser:
+  headless: true
+  viewport: {width: 1280, height: 720}
+  slow_mo: 0
+
+auth:
+  strategy: "form"
+  state_file: ".playwright/.auth/user.json"
+  credentials:
+    username: "${TEST_USERNAME}"
+    password: "${TEST_PASSWORD}"
+
+routes:
+  login: "/login"
+  dashboard: "/dashboard"
+```
+
+`conftest.py` feeds the config into pytest-playwright's built-in fixture hooks (`browser_context_args`, `browser_type_launch_args`), so `base_url`, viewport, and browser settings flow into every test automatically — no duplication in test files or stories.
+
+### Adding this to another repo
+
+1. Copy `shared_utils/` into the new repo.
+2. Write `adapters/my_app_adapter.py` implementing the three required methods:
+
+```python
+from playwright.sync_api import Page
+from shared_utils.adapters.base import AppAdapter
+
+class MyAppAdapter(AppAdapter):
+    def login(self, page: Page) -> None:
+        creds = self.config["auth"]["credentials"]
+        page.goto(self.base_url() + self.route("login"))
+        page.get_by_label("Email").fill(creds["username"])
+        page.get_by_label("Password").fill(creds["password"])
+        page.get_by_role("button", name="Sign in").click()
+        page.wait_for_url("**/dashboard")
+
+    def seed_data(self) -> dict:
+        # create test fixtures via API or DB; return refs for cleanup
+        return {}
+
+    def cleanup_data(self, data: dict) -> None:
+        pass
+```
+
+3. Write `test_config.yaml` for the new repo.
+4. In `conftest.py`, return your adapter from `app_adapter` — everything else is inherited:
+
+```python
+import pytest
+from adapters.my_app_adapter import MyAppAdapter
+from shared_utils.core.config_loader import load_config
+
+@pytest.fixture(scope="session")
+def repo_config():
+    return load_config("test_config.yaml")
+
+@pytest.fixture(scope="session")
+def app_adapter(repo_config):
+    return MyAppAdapter(repo_config)
+
+# browser_type_launch_args, browser_context_args, auth_state,
+# and authenticated_page fixtures follow the same pattern as this repo's conftest.py
+```
+
+### Shared utilities
+
+| Module | What it provides |
+|---|---|
+| `shared_utils.adapters.base.AppAdapter` | Abstract base: `login`, `seed_data`, `cleanup_data` (required); `after_navigation`, `setup_context`, `on_auth_failure` (overridable); `base_url`, `route`, `navigate_to` (config-derived) |
+| `shared_utils.core.config_loader.load_config` | Loads `test_config.yaml` and resolves `${VAR:-default}` from environment |
+| `shared_utils.core.retry.retry` | Retry a callable N times with delay |
+| `shared_utils.core.retry.wait_for` | Poll a condition until True or timeout |
+| `shared_utils.core.assertions.SoftAssertions` | Collect multiple failures and raise them all at once |
 
 ---
 
