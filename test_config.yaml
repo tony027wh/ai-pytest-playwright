@@ -1,0 +1,44 @@
+app:
+  name: "ai-pytest-playwright"
+  default_env: "${TEST_ENV:-staging}"
+
+environments:
+  local:
+    base_url: "http://localhost:3000"
+  staging:
+    base_url: "https://the-internet.herokuapp.com"
+  production:
+    base_url: "https://the-internet.herokuapp.com"
+
+browser:
+  type: chromium
+  headless: true
+  viewport:
+    width: 1280
+    height: 720
+  slow_mo: 100
+
+timeouts:
+  default: 30000
+  navigation: 60000
+
+retry:
+  count: 2
+  delay_ms: 500
+
+auth:
+  strategy: "form"
+  state_file: ".playwright/.auth/user.json"
+  credentials:
+    username: "${TEST_USERNAME:-tomsmith}"
+    password: "${TEST_PASSWORD:-SuperSecretPassword!}"
+
+# Named routes — stories reference these by name instead of hard-coding paths.
+# Add new routes here when a story targets a page that all stories should know about.
+routes:
+  login: "/login"
+  secure: "/secure"
+  add_remove: "/add_remove_elements/"
+  checkboxes: "/checkboxes"
+  dropdown: "/dropdown"
+  status_codes: "/status_codes"

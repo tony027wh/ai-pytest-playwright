@@ -19,6 +19,9 @@ ai-report.html
 ai-report.css
 ai-analysis.json
 
+# Playwright auth state (contains sensitive cookies/tokens)
+.playwright/
+
 # dotenv
 .env
 .env.local

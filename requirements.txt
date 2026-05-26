@@ -5,3 +5,4 @@ pytest-html
 fastapi
 uvicorn[standard]
 python-dotenv
+pyyaml

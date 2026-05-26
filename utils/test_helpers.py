@@ -83,6 +83,6 @@ def validate_story_text(text: str) -> dict:
 
     has_url = bool(re.search(r"https?://\S+", t, re.IGNORECASE))
     if not has_url:
-        warnings.append("No Base URL detected (you can still generate tests, but URL helps).")
+        warnings.append("No Base URL in story — repo default from test_config.yaml will be used.")
 
     return {"ok": len(errors) == 0, "errors": errors, "warnings": warnings}

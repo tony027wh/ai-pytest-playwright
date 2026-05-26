@@ -25,7 +25,7 @@ Story files live in `stories/<slug>.md`. The slug becomes the test function name
 ```markdown
 Title: <Descriptive title>
 
-Base URL: https://example.com
+Base URL: https://example.com   ← optional if app is configured in test_config.yaml
 
 As a user, I want to <goal>.
 
@@ -36,7 +36,10 @@ Acceptance criteria:
 - Expect <assertion>
 ```
 
-Always include `Base URL:`. Use relative paths (`/login`) in acceptance criteria — the generator prepends the base URL.
+`Base URL:` is optional. If omitted, `generate_test.py` reads the default from `test_config.yaml`
+(`environments.<default_env>.base_url`). Include `Base URL:` only when the story targets a
+**different** site than the repo default. Use relative paths (`/login`) in acceptance criteria —
+the generator prepends the base URL.
 
 ## Test File Format
 
@@ -57,7 +60,8 @@ def test_<slug>(page: Page):
 Rules:
 - Always start with `from playwright.sync_api import Page, expect`
 - Use the pytest `page: Page` fixture — never instantiate `sync_playwright()` in test files
-- Prepend the Base URL to relative paths explicitly (no `base_url` fixture in this project)
+- `base_url` is set in `browser_context_args` from `test_config.yaml` — you may use relative
+  paths like `page.goto("/login")`, or full URLs; both work
 - One `def test_<slug>(page: Page):` function, no class wrapper (unless using POM — see below)
 
 ## Commands Reference

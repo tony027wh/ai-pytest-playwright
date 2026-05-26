@@ -5,6 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from utils.claude_client import claude_prompt
+from utils.test_helpers import extract_base_url
 
 SYSTEM_MSG = (
     "You are a pytest-playwright test code generator. "
@@ -20,20 +21,41 @@ USER_MSG_TEMPLATE = """Generate a SINGLE pytest-playwright test in Python based 
 Requirements:
 - Start with: from playwright.sync_api import Page, expect
 - Use pytest fixture: def test_{slug}(page: Page):
-- Use the Base URL from the story. If present, prepend it to any relative paths like /login.
+- Base URL for this repo is: {base_url}
+  Use it to construct full URLs for any relative paths (e.g. /login → {base_url}/login).
+  If the story clearly targets a different site, use that site's URL instead.
 - Use page.goto(), page.locator(), page.fill(), page.click(), expect(...)
 - Use data from the Acceptance criteria.
 - Output ONLY the Python code. No explanations, no markdown, no comments.
 - Start directly with "from playwright.sync_api import Page, expect"."""
 
 
+def _config_base_url() -> str:
+    """Read the default base_url from test_config.yaml, falling back to empty string."""
+    try:
+        from shared_utils.core.config_loader import load_config
+        cfg = load_config("test_config.yaml")
+        adapter_env = cfg["app"]["default_env"]
+        # _resolve_env is on the adapter; replicate the simple case here
+        import os, re as _re
+        m = _re.match(r"^\$\{(\w+)(?::-(.*))?\}$", adapter_env)
+        if m:
+            adapter_env = os.environ.get(m.group(1), m.group(2) or "")
+        return cfg["environments"].get(adapter_env, {}).get("base_url", "")
+    except Exception:
+        return ""
+
+
 def generate_for_story(story_path: Path) -> None:
     story = story_path.read_text(encoding="utf-8")
     slug = story_path.stem
 
+    # Story-level Base URL takes priority; fall back to repo config.
+    base_url = extract_base_url(story) or _config_base_url()
+
     out_path = Path("tests") / f"test_{slug}.py"
 
-    user_msg = USER_MSG_TEMPLATE.format(story=story, slug=slug)
+    user_msg = USER_MSG_TEMPLATE.format(story=story, slug=slug, base_url=base_url)
     code = claude_prompt(SYSTEM_MSG, user_msg)
 
     code = re.sub(r"```[a-zA-Z]*", "", code).replace("```", "").strip()
