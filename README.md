@@ -1,4 +1,4 @@
-# AI pytest-Playwright Test Lab
+# AI Pytest-Playwright
 
 An end-to-end AI-powered test automation pipeline that turns plain-English user stories into running Playwright tests, analyzes failures with Claude, and produces a styled HTML report.
 
@@ -6,17 +6,22 @@ An end-to-end AI-powered test automation pipeline that turns plain-English user 
 
 ## Table of Contents
 
-1. [Tech Stack](#tech-stack)
-2. [Project Structure](#project-structure)
-3. [Installation](#installation)
-4. [Workflow: Run All Tests](#workflow-run-all-tests)
-5. [Workflow: Add a New Story and Test It](#workflow-add-a-new-story-and-test-it)
-6. [Individual Commands Reference](#individual-commands-reference)
-7. [UI Dashboard](#ui-dashboard)
-8. [Claude Code Skill](#claude-code-skill)
-9. [How AI Analysis Works](#how-ai-analysis-works)
-10. [Cross-Repo Utility Design](#cross-repo-utility-design)
-11. [Roadmap](#roadmap)
+- [AI Pytest-Playwright](#ai-pytest-playwright)
+  - [Table of Contents](#table-of-contents)
+  - [Tech Stack](#tech-stack)
+  - [Project Structure](#project-structure)
+  - [Installation](#installation)
+  - [Workflow: Run All Tests](#workflow-run-all-tests)
+  - [Workflow: Add a New Story and Test It](#workflow-add-a-new-story-and-test-it)
+  - [Individual Commands Reference](#individual-commands-reference)
+  - [UI Dashboard](#ui-dashboard)
+  - [Claude Code Skill](#claude-code-skill)
+  - [How AI Analysis Works](#how-ai-analysis-works)
+  - [Cross-Repo Utility Design](#cross-repo-utility-design)
+    - [How it works](#how-it-works)
+    - [Adding this to another repo](#adding-this-to-another-repo)
+    - [Shared utilities](#shared-utilities)
+  - [Roadmap](#roadmap)
 
 ---
 
