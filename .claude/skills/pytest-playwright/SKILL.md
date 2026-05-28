@@ -172,6 +172,17 @@ expect(page).to_have_url(re.compile(r"/status_codes/200"))
 expect(page).to_have_title(re.compile(r"Wikipedia"))
 ```
 
+## "Page Loads Successfully"
+
+When a story criterion says "the page loads successfully" without specifying a URL, assert the page title or a key visible element — never invent a URL assertion:
+
+```python
+expect(page).to_have_title(re.compile(r"HDMI", re.IGNORECASE))  # title proves page loaded
+expect(page.locator("h1")).to_be_visible()                       # or a key element
+```
+
+A URL assertion confirms navigation, not page load. Only add `to_have_url()` when the story explicitly states what the URL should be.
+
 ## Wait Strategies
 
 Never use `page.wait_for_timeout()` (hardcoded sleep). Use:
