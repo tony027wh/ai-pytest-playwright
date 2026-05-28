@@ -159,6 +159,17 @@ Prefer in this order:
 5. `locator("#id")` or `locator("[data-testid=foo]")` — only if semantic locators aren't available
 6. Never use fragile CSS like `nth-child`, positional XPath, or long descendant selectors
 
+## URL Assertions
+
+`expect(page).to_have_url()` accepts only a `str` (exact match) or `re.Pattern` (partial/regex match). Never pass a lambda or callable — it will raise a `TypeError`.
+
+For partial URL checks, use `re.compile()`:
+```python
+import re
+
+expect(page).to_have_url(re.compile(r"/status_codes/200"))
+```
+
 ## Wait Strategies
 
 Never use `page.wait_for_timeout()` (hardcoded sleep). Use:
