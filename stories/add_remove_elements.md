@@ -6,7 +6,7 @@ As a user, I want to add and remove elements so I can manage the list of Delete 
 
 Acceptance criteria (intentionally incorrect to force a failing test):
 - Navigate to `/add_remove_elements/`
-- Click the `Add Element` button two times
+- Click the `Add Element` button three times
 - Expect there to be exactly **three** `Delete` buttons visible
 - Click one of the `Delete` buttons
 - Expect exactly **two** `Delete` buttons to remain visible
