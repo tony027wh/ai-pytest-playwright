@@ -37,11 +37,6 @@ def _config_base_url() -> str:
         from shared_utils.core.config_loader import load_config
         cfg = load_config("test_config.yaml")
         adapter_env = cfg["app"]["default_env"]
-        # _resolve_env is on the adapter; replicate the simple case here
-        import os, re as _re
-        m = _re.match(r"^\$\{(\w+)(?::-(.*))?\}$", adapter_env)
-        if m:
-            adapter_env = os.environ.get(m.group(1), m.group(2) or "")
         return cfg["environments"].get(adapter_env, {}).get("base_url", "")
     except Exception:
         return ""
