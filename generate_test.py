@@ -1,4 +1,5 @@
 import argparse
+import ast
 import re
 import sys
 from pathlib import Path
@@ -55,6 +56,21 @@ def generate_for_story(story_path: Path) -> None:
     code = claude_prompt(SYSTEM_MSG, user_msg)
 
     code = re.sub(r"```[a-zA-Z]*", "", code).replace("```", "").strip()
+
+    try:
+        tree = ast.parse(code)
+    except SyntaxError as e:
+        print(f"Generated code for {slug} has a syntax error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    expected_fn = f"test_{slug}"
+    fn_names = {node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)}
+    if expected_fn not in fn_names:
+        print(
+            f"Generated code for {slug} is missing function '{expected_fn}' (found: {fn_names})",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     out_path.parent.mkdir(exist_ok=True)
     out_path.write_text(code, encoding="utf-8")
