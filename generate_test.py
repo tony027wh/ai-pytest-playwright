@@ -27,7 +27,8 @@ Requirements:
   If the story clearly targets a different site, use that site's URL instead.
 - Use page.goto(), page.locator(), page.fill(), page.click(), expect(...)
 - Use data from the Acceptance criteria.
-- For URL assertions: expect(page).to_have_url() accepts only a string (exact match) or re.Pattern (partial/regex match). NEVER pass a lambda or callable. For partial URL checks use re.compile(), e.g. expect(page).to_have_url(re.compile(r"/status_codes/200")) and add "import re" after the playwright import.
+- expect(page).to_have_url() and expect(page).to_have_title() each accept only a string (exact match) or re.Pattern (partial/regex match). NEVER pass a lambda or callable to either — it will raise a TypeError. For partial/contains checks use re.compile(), e.g. expect(page).to_have_url(re.compile(r"/status_codes/200")) or expect(page).to_have_title(re.compile(r"Wikipedia")). Add "import re" after the playwright import when using re.compile().
+- When a criterion says "the page loads successfully" without specifying a URL, assert the page title or a key visible element — never invent a URL assertion. Example: expect(page).to_have_title(re.compile(r"keyword", re.IGNORECASE)) or expect(page.locator("h1")).to_be_visible().
 - Output ONLY the Python code. No explanations, no markdown, no comments.
 - Start directly with "from playwright.sync_api import Page, expect"."""
 
