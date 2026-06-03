@@ -33,25 +33,3 @@ def browser_context_args(browser_context_args, repo_config, app_adapter):
         "viewport": browser_cfg.get("viewport", {"width": 1280, "height": 720}),
         "ignore_https_errors": True,
     }
-
-
-@pytest.fixture(scope="session")
-def auth_state(app_adapter, browser, repo_config):
-    """Login once per session and cache storageState to disk."""
-    from pathlib import Path
-
-    state_file = Path(repo_config["auth"]["state_file"])
-    state_file.parent.mkdir(parents=True, exist_ok=True)
-    ctx = browser.new_context()
-    page = ctx.new_page()
-    app_adapter.login(page)
-    ctx.storage_state(path=str(state_file))
-    ctx.close()
-    return str(state_file)
-
-
-@pytest.fixture
-def authenticated_page(page, app_adapter):
-    """Function-scoped page already in an authenticated browser context."""
-    app_adapter.after_navigation(page)
-    return page
