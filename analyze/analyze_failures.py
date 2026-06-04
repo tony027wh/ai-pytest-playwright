@@ -412,6 +412,16 @@ def build_html(analyses: list) -> str:
 </html>"""
 
 
+def _config_base_url() -> str:
+    try:
+        from shared_utils.core.config_loader import load_config
+        cfg = load_config("test_config.yaml")
+        adapter_env = cfg["app"]["default_env"]
+        return cfg["environments"].get(adapter_env, {}).get("base_url", "")
+    except Exception:
+        return ""
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Analyze pytest failures with AI")
     parser.add_argument("--html", action="store_true", help="Also generate HTML report")
@@ -426,6 +436,7 @@ def main() -> None:
 
     report = json.loads(report_path.read_text(encoding="utf-8"))
     failed_tests = collect_failed_tests(report.get("tests", []))
+    app_base_url = _config_base_url()
     analyses = []
 
     for test in failed_tests:
@@ -440,8 +451,8 @@ def main() -> None:
 
         prompt = f"""You are a senior QA engineer specializing in Playwright.
 
-The application under test is the public demo app at:
-https://the-internet.herokuapp.com
+The application under test is at:
+{app_base_url}
 
 Test: {nodeid}
 Overall status: {test['outcome']}
