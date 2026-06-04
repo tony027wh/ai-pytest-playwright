@@ -40,7 +40,8 @@ def _config_base_url() -> str:
         cfg = load_config("test_config.yaml")
         adapter_env = cfg["app"]["default_env"]
         return cfg["environments"].get(adapter_env, {}).get("base_url", "")
-    except Exception:
+    except Exception as e:
+        print(f"Warning: could not read base_url from test_config.yaml: {e}", file=sys.stderr)
         return ""
 
 
