@@ -7,7 +7,7 @@ def run_pipeline(story: str = None, test: str = None) -> None:
     gen_cmd = [sys.executable, "generate_test.py"]
     if story:
         gen_cmd += ["--story", story]
-    subprocess.run(gen_cmd)
+    subprocess.run(gen_cmd, check=True)
 
     test_cmd = [sys.executable, "-m", "pytest"]
     if test:
