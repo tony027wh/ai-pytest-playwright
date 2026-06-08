@@ -1,6 +1,18 @@
 import re
+import sys
 from pathlib import Path
 from typing import Optional
+
+
+def config_base_url() -> str:
+    try:
+        from shared_utils.core.config_loader import load_config
+        cfg = load_config("test_config.yaml")
+        adapter_env = cfg["app"]["default_env"]
+        return cfg["environments"].get(adapter_env, {}).get("base_url", "")
+    except Exception as e:
+        print(f"Warning: could not read base_url from test_config.yaml: {e}", file=sys.stderr)
+        return ""
 
 
 def strip_markdown_fences(code: str) -> str:

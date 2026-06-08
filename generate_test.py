@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from utils.claude_client import claude_prompt
-from utils.test_helpers import extract_base_url
+from utils.test_helpers import config_base_url, extract_base_url
 
 SYSTEM_MSG = (
     "You are a pytest-playwright test code generator. "
@@ -33,24 +33,12 @@ Requirements:
 - Start directly with "from playwright.sync_api import Page, expect"."""
 
 
-def _config_base_url() -> str:
-    """Read the default base_url from test_config.yaml, falling back to empty string."""
-    try:
-        from shared_utils.core.config_loader import load_config
-        cfg = load_config("test_config.yaml")
-        adapter_env = cfg["app"]["default_env"]
-        return cfg["environments"].get(adapter_env, {}).get("base_url", "")
-    except Exception as e:
-        print(f"Warning: could not read base_url from test_config.yaml: {e}", file=sys.stderr)
-        return ""
-
-
 def generate_for_story(story_path: Path) -> None:
     story = story_path.read_text(encoding="utf-8")
     slug = story_path.stem
 
     # Story-level Base URL takes priority; fall back to repo config.
-    base_url = extract_base_url(story) or _config_base_url()
+    base_url = extract_base_url(story) or config_base_url()
 
     out_path = Path("tests") / f"test_{slug}.py"
 
