@@ -1,12 +1,11 @@
 import argparse
 import ast
-import re
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from utils.claude_client import claude_prompt
-from utils.test_helpers import config_base_url, extract_base_url
+from utils.test_helpers import config_base_url, extract_base_url, strip_markdown_fences
 
 SYSTEM_MSG = (
     "You are a pytest-playwright test code generator. "
@@ -45,7 +44,7 @@ def generate_for_story(story_path: Path) -> None:
     user_msg = USER_MSG_TEMPLATE.format(story=story, slug=slug, base_url=base_url)
     code = claude_prompt(SYSTEM_MSG, user_msg)
 
-    code = re.sub(r"```[a-zA-Z]*", "", code).replace("```", "").strip()
+    code = strip_markdown_fences(code)
 
     try:
         tree = ast.parse(code)
