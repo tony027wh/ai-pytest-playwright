@@ -495,12 +495,16 @@ Include:
         print(f"HTML report written to: ai-report.html")
 
         system = platform.system()
-        if system == "Darwin":
-            subprocess.run(["open", str(html_path)])
-        elif system == "Windows":
-            subprocess.run(["start", str(html_path)], shell=True)
-        else:
-            subprocess.run(["xdg-open", str(html_path)])
+        try:
+            if system == "Darwin":
+                subprocess.run(["open", str(html_path)], check=True)
+            elif system == "Windows":
+                subprocess.run(["start", str(html_path)], shell=True, check=True)
+            else:
+                subprocess.run(["xdg-open", str(html_path)], check=True)
+        except Exception as e:
+            print(f"Warning: could not open report automatically: {e}", file=sys.stderr)
+            print(f"Open manually: {html_path}", file=sys.stderr)
 
 
 if __name__ == "__main__":
