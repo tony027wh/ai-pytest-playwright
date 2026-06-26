@@ -26,6 +26,11 @@ def extract_base_url(story_content: str) -> Optional[str]:
     return match.group(1).strip() if match else None
 
 
+def extract_story_type(story_content: str) -> str:
+    match = re.search(r"Type:\s*(\S+)", story_content, re.IGNORECASE)
+    return match.group(1).strip().lower() if match else "ui"
+
+
 def extract_story_title(story_content: str) -> Optional[str]:
     match = re.search(r"Title:\s*(.+)", story_content, re.IGNORECASE)
     return match.group(1).strip() if match else None
