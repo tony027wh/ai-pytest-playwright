@@ -1,12 +1,12 @@
-Title: Add/Remove Elements - wrong expectations (the-internet.herokuapp.com)
+Title: Add/Remove Elements - 错误预期 (the-internet.herokuapp.com)
 
 Base URL: https://the-internet.herokuapp.com
 
-As a user, I want to add and remove elements so I can manage the list of Delete buttons.
+作为用户，我想添加和删除元素，以便管理 Delete 按钮列表。
 
-Acceptance criteria (intentionally incorrect to force a failing test):
-- Navigate to `/add_remove_elements/`
-- Click the `Add Element` button three times
-- Expect there to be exactly **three** `Delete` buttons visible
-- Click one of the `Delete` buttons
-- Expect exactly **two** `Delete` buttons to remain visible
+验收条件（故意错误以强制测试失败）：
+- 导航到 `/add_remove_elements/`
+- 点击 `Add Element` 按钮三次
+- 期望正好有 **三个** `Delete` 按钮可见
+- 点击其中一个 `Delete` 按钮
+- 期望正好有 **两个** `Delete` 按钮保持可见

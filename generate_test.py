@@ -4,65 +4,66 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from utils.claude_client import claude_prompt
+from utils.opencode_client import opencode_prompt as claude_prompt
 from utils.test_helpers import config_base_url, extract_base_url, extract_story_type, strip_markdown_fences
 
 SYSTEM_MSG_UI = (
-    "You are a pytest-playwright test code generator. "
-    "Output ONLY the complete Python code for a pytest test. "
-    "Do not include any explanations, comments about the code, or markdown formatting. "
-    'Start directly with "from playwright.sync_api import Page, expect".'
+    "你是一个 pytest-playwright 测试代码生成器。"
+    "只输出完整的 Python 代码作为 pytest 测试。"
+    "不要包含任何解释、关于代码的注释或 markdown 格式。"
+    '直接以 "from playwright.sync_api import Page, expect" 开头。'
 )
 
-USER_MSG_TEMPLATE_UI = """Generate a SINGLE pytest-playwright test in Python based on this user story:
+USER_MSG_TEMPLATE_UI = """根据以下用户故事生成一个 Python 的 pytest-playwright 测试（单个测试）：
 
 {story}
 
-Requirements:
-- Start with: from playwright.sync_api import Page, expect
-- Use pytest fixture: def test_{slug}(page: Page):
-- Base URL for this repo is: {base_url}
-  Use it to construct full URLs for any relative paths (e.g. /login → {base_url}/login).
-  If the story clearly targets a different site, use that site's URL instead.
-- Use page.goto(), page.locator(), page.fill(), page.click(), expect(...)
-- Use data from the Acceptance criteria.
-- expect(page).to_have_url() and expect(page).to_have_title() each accept only a string (exact match) or re.Pattern (partial/regex match). NEVER pass a lambda or callable to either — it will raise a TypeError. For partial/contains checks use re.compile(), e.g. expect(page).to_have_url(re.compile(r"/status_codes/200")) or expect(page).to_have_title(re.compile(r"Wikipedia")). Add "import re" after the playwright import when using re.compile().
-- When a criterion says "the page loads successfully" without specifying a URL, assert the page title or a key visible element — never invent a URL assertion. Example: expect(page).to_have_title(re.compile(r"keyword", re.IGNORECASE)) or expect(page.locator("h1")).to_be_visible().
-- Output ONLY the Python code. No explanations, no markdown, no comments.
-- Start directly with "from playwright.sync_api import Page, expect"."""
+要求：
+- 以: from playwright.sync_api import Page, expect 开头
+- 使用 pytest 夹具: def test_{slug}(page: Page):
+- 该仓库的基础 URL 为: {base_url}
+  用它来构造任何相对路径的完整 URL（例如 /login → {base_url}/login）。
+  如果故事明确指向另一个站点，则改用该站点的 URL。
+- 使用 page.goto()、page.locator()、page.fill()、page.click()、expect(...)
+- 使用验收标准中的数据。
+- expect(page).to_have_url() 和 expect(page).to_have_title() 各自只接受一个字符串（精确匹配）或 re.Pattern（部分/正则匹配）。绝不能向它们传递 lambda 或可调用对象——否则会引发 TypeError。对于部分/包含检查，使用 re.compile()，例如 expect(page).to_have_url(re.compile(r"/status_codes/200")) 或 expect(page).to_have_title(re.compile(r"Wikipedia"))。使用 re.compile() 时，请在 playwright 导入之后添加 "import re"。
+- 当标准中提到"页面加载成功"但没有指定 URL 时，断言页面标题或一个关键可见元素——绝不要自行发明 URL 断言。例如: expect(page).to_have_title(re.compile(r"关键词", re.IGNORECASE)) 或 expect(page.locator("h1")).to_be_visible()。
+- 只输出 Python 代码。不要解释，不要 markdown，不要注释。
+- 直接以 "from playwright.sync_api import Page, expect" 开头。"""
 
 SYSTEM_MSG_API = (
-    "You are a pytest test code generator for REST API testing using httpx. "
-    "Output ONLY the complete Python code for a pytest test. "
-    "Do not include any explanations, comments about the code, or markdown formatting. "
-    'Start directly with "import httpx".'
+    "你是一个使用 httpx 进行 REST API 测试的 pytest 测试代码生成器。"
+    "只输出完整的 Python 代码作为 pytest 测试。"
+    "不要包含任何解释、关于代码的注释或 markdown 格式。"
+    '直接以 "import httpx" 开头。'
 )
 
-USER_MSG_TEMPLATE_API = """Generate a SINGLE pytest test using httpx based on this user story:
+USER_MSG_TEMPLATE_API = """根据以下用户故事生成一个使用 httpx 的 pytest 测试（单个测试）：
 
 {story}
 
-Requirements:
-- Start with: import httpx
-- Use pytest function: def test_{slug}():  (no page fixture — this is an API test)
-- Base URL is: {base_url}
-  Use it to construct full URLs for any relative paths (e.g. /users/1 → {base_url}/users/1).
-  If the story clearly targets a different host, use that host instead.
-- Use httpx.get(), httpx.post(), httpx.put(), httpx.patch(), httpx.delete() for HTTP calls.
-- Assert response.status_code equals the expected value.
-- Parse JSON with response.json() and assert individual fields with plain Python assertions.
-- Assert response headers via response.headers when the story requires it.
-- For secrets/tokens written as {{VARIABLE_NAME}} in the story, read them with os.environ.get("VARIABLE_NAME") and add "import os" at the top.
-- Write clear AssertionError messages, e.g. assert body["id"] == 1, f"expected id=1, got {{body['id']}}"
-- Output ONLY the Python code. No explanations, no markdown, no comments.
-- Start directly with "import httpx"."""
+要求：
+- 以: import httpx 开头
+- 使用 pytest 函数: def test_{slug}():  （没有 page 夹具——这是一个 API 测试）
+- 基础 URL 为: {base_url}
+  用它来构造任何相对路径的完整 URL（例如 /users/1 → {base_url}/users/1）。
+  如果故事明确指向另一个主机，则改用该主机。
+- 使用 httpx.get()、httpx.post()、httpx.put()、httpx.patch()、httpx.delete() 进行 HTTP 调用。
+- 断言 response.status_code 等于期望值。
+- 使用 response.json() 解析 JSON，并使用普通 Python 断言检查各个字段。
+- 当故事需要时，通过 response.headers 断言响应头。
+- 对于故事中写作 {{VARIABLE_NAME}} 的密钥/令牌，使用 os.environ.get("VARIABLE_NAME") 读取它们，并在顶部添加 "import os"。
+- 编写清晰的 AssertionError 消息，例如 assert body["id"] == 1, f"期望 id=1，得到 {{body['id']}}"
+- 只输出 Python 代码。不要解释，不要 markdown，不要注释。
+- 直接以 "import httpx" 开头。"""
 
 
 def generate_for_story(story_path: Path) -> None:
+    """根据故事文件生成测试代码并写入 tests/ 目录。"""
     story = story_path.read_text(encoding="utf-8")
     slug = story_path.stem
 
-    # Story-level Base URL takes priority; fall back to repo config.
+    # 故事级别的基础 URL 优先；否则回退到仓库配置。
     base_url = extract_base_url(story) or config_base_url()
 
     story_type = extract_story_type(story)
@@ -82,44 +83,45 @@ def generate_for_story(story_path: Path) -> None:
     try:
         tree = ast.parse(code)
     except SyntaxError as e:
-        print(f"Generated code for {slug} has a syntax error: {e}", file=sys.stderr)
+        print(f"为 {slug} 生成的代码存在语法错误: {e}", file=sys.stderr)
         sys.exit(1)
 
     expected_fn = f"test_{slug}"
     fn_names = {node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)}
     if expected_fn not in fn_names:
         print(
-            f"Generated code for {slug} is missing function '{expected_fn}' (found: {fn_names})",
+            f"为 {slug} 生成的代码缺少函数 '{expected_fn}'（找到: {fn_names}）",
             file=sys.stderr,
         )
         sys.exit(1)
 
     out_path.parent.mkdir(exist_ok=True)
     out_path.write_text(code, encoding="utf-8")
-    print(f"Generated: {out_path}")
+    print(f"已生成: {out_path}")
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate pytest tests from story files")
-    parser.add_argument("--story", help="Specific story filename (e.g. login.md)")
+    """从故事文件生成 pytest 测试的主入口点。"""
+    parser = argparse.ArgumentParser(description="从故事文件生成 pytest 测试")
+    parser.add_argument("--story", help="特定的故事文件名（例如 login.md）")
     args = parser.parse_args()
 
     stories_dir = Path("stories")
     if not stories_dir.exists():
-        print("No stories/ directory found.", file=sys.stderr)
+        print("未找到 stories/ 目录。", file=sys.stderr)
         sys.exit(1)
 
     if args.story:
         story_path = stories_dir / args.story
         if not story_path.exists():
-            print(f"Story not found: {args.story}", file=sys.stderr)
+            print(f"未找到故事文件: {args.story}", file=sys.stderr)
             sys.exit(1)
         generate_for_story(story_path)
         return
 
     files = sorted(stories_dir.glob("*.md"))
     if not files:
-        print("No .md story files found in ./stories", file=sys.stderr)
+        print("在 ./stories 中未找到 .md 故事文件", file=sys.stderr)
         sys.exit(1)
 
     for story_path in files:

@@ -1,42 +1,42 @@
 # ai-pytest-playwright
 
-AI-powered pytest-playwright test automation framework. User stories in markdown → Claude generates Python tests → pytest runs them → AI analyzes failures.
+AI 驱动的 pytest-playwright 测试自动化框架。Markdown 格式的用户故事 → OpenCode 生成 Python 测试 → pytest 运行测试 → AI 分析失败。
 
-## Commands
+## 命令
 
 ```bash
-# Full pipeline (generate + test + analyze + HTML report)
+# 完整流水线（生成 + 测试 + 分析 + HTML 报告）
 python pipeline.py
 
-# Individual steps
-python generate_test.py                    # Generate tests from all stories
-python generate_test.py --story login.md   # Generate test for one story
-python -m pytest                           # Run all tests
-python analyze/analyze_failures.py         # AI analysis (JSON only)
-python analyze/analyze_failures.py --html  # AI analysis + HTML report
+# 独立步骤
+python generate_test.py                    # 从所有故事生成测试
+python generate_test.py --story login.md   # 为单个故事生成测试
+python -m pytest                           # 运行所有测试
+python analyze/analyze_failures.py         # AI 分析（仅 JSON）
+python analyze/analyze_failures.py --html  # AI 分析 + HTML 报告
 
-# UI server (http://localhost:5173)
+# UI 服务器（http://localhost:5173）
 uvicorn server.server:app --port 5173
 ```
 
-## Architecture
+## 架构
 
-### Data flow
+### 数据流
 ```
 stories/*.md
-    → generate_test.py (claude -p subprocess)
+    → generate_test.py (opencode 子进程)
         → tests/test_*.py
             → pytest (pytest-report.json + playwright-report/)
                 → analyze/analyze_failures.py
                     → ai-analysis.json + ai-report.html
 ```
 
-### Story format
-Plain English `.md` files in `stories/`. The filename stem becomes the test slug:
+### 故事格式
+纯英文 `.md` 文件，位于 `stories/` 目录下。文件名主干成为测试 slug：
 - `stories/login.md` → `tests/test_login.py` → `def test_login(page: Page):`
 
 ```markdown
-Title: Login - valid credentials
+Title: 登录 - 有效凭据
 
 Base URL: https://the-internet.herokuapp.com
 
@@ -50,31 +50,31 @@ Acceptance criteria:
 - Expect redirect to `/secure`
 ```
 
-### pytest-json-report format
-`analyze_failures.py` reads `pytest-report.json`. Test nodeids have format:
+### pytest-json-report 格式
+`analyze_failures.py` 读取 `pytest-report.json`。测试节点 ID 的格式为：
 `tests/test_login.py::test_login`
 
-The slug is extracted by stripping `test_` prefix from the filename stem:
-`test_login.py` → `login` → loads `stories/login.md` for context.
+通过从文件名主干去除 `test_` 前缀来提取 slug：
+`test_login.py` → `login` → 加载 `stories/login.md` 作为上下文。
 
-### Test file naming
-- Story: `stories/add_remove_elements.md`
-- Test file: `tests/test_add_remove_elements.py`
-- Test function: `def test_add_remove_elements(page: Page):`
+### 测试文件命名
+- 故事：`stories/add_remove_elements.md`
+- 测试文件：`tests/test_add_remove_elements.py`
+- 测试函数：`def test_add_remove_elements(page: Page):`
 
-### Reports
-- `pytest-report.json` — machine-readable pytest output (input to analyzer)
-- `playwright-report/` — pytest-html traditional report (iframed in UI)
-- `ai-analysis.json` — structured AI analysis per failure
-- `ai-report.html` + `ai-report.css` — beautiful AI failure dashboard
+### 报告
+- `pytest-report.json` — 机器可读的 pytest 输出（分析器的输入）
+- `playwright-report/` — pytest-html 传统报告（在 UI 中以 iframe 嵌入）
+- `ai-analysis.json` — 每个失败的结构化 AI 分析
+- `ai-report.html` + `ai-report.css` — 精美的 AI 失败仪表盘
 
-### Server
-FastAPI server mirrors the Node HTTP server API exactly.
-All `/api/*` paths are identical so the UI works unchanged.
+### 服务器
+FastAPI 服务器与 Node HTTP 服务器的 API 完全一致。
+所有 `/api/*` 路径完全相同，因此 UI 无需修改即可工作。
 
-Test file backups before AI fixes are stored in `tests/.ai-backups/`.
+AI 修复前的测试文件备份存储在 `tests/.ai-backups/` 中。
 
-## Dependencies
+## 依赖
 
 ```
 pytest
@@ -86,7 +86,7 @@ uvicorn[standard]
 python-dotenv
 ```
 
-Install:
+安装：
 ```bash
 pip install -r requirements.txt
 playwright install

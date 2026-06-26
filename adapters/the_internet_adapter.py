@@ -4,7 +4,7 @@ from shared_utils.adapters.base import AppAdapter
 
 
 class TheInternetAdapter(AppAdapter):
-    """Adapter for https://the-internet.herokuapp.com demo app."""
+    """适用于 https://the-internet.herokuapp.com 演示应用的适配器。"""
 
     def login(self, page: Page) -> None:
         creds = self.config["auth"]["credentials"]
@@ -15,7 +15,7 @@ class TheInternetAdapter(AppAdapter):
         page.wait_for_url("**/secure")
 
     def seed_data(self) -> dict:
-        # the-internet is a stateless demo — no data setup needed
+        # the-internet 是一个无状态演示 —— 无需设置数据
         return {}
 
     def cleanup_data(self, data: dict) -> None:

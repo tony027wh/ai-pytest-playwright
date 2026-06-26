@@ -33,8 +33,8 @@ auth:
     username: "${TEST_USERNAME:-tomsmith}"
     password: "${TEST_PASSWORD:-SuperSecretPassword!}"
 
-# Named routes — stories reference these by name instead of hard-coding paths.
-# Add new routes here when a story targets a page that all stories should know about.
+# 命名路由 — 故事（stories）按名称引用这些路由，而非硬编码路径。
+# 当某个故事指向一个所有故事都应知晓的页面时，在此添加新路由。
 routes:
   login: "/login"
   secure: "/secure"

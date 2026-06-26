@@ -1,13 +1,13 @@
-Title: Login - valid credentials (the-internet.herokuapp.com)
+Title: Login - 有效凭据 (the-internet.herokuapp.com)
 
 Base URL: https://the-internet.herokuapp.com
 
-As a user, I want to log in with valid credentials so I can access the secure area.
+作为用户，我想使用有效凭据登录，以便访问安全区域。
 
-Acceptance criteria:
-- Navigate to `/login`
-- Fill in the username `tomsmith`
-- Fill in the password `SuperSecretPassword!`
-- Click the Login button
-- Expect to be redirected to `/secure`
-- Expect the success flash message to be visible and contain the text: `You logged into a secure area!`
+验收条件：
+- 导航到 `/login`
+- 填写用户名 `tomsmith`
+- 填写密码 `SuperSecretPassword!`
+- 点击 Login 按钮
+- 期望被重定向到 `/secure`
+- 期望成功闪存消息可见，并包含文本：`You logged into a secure area!`

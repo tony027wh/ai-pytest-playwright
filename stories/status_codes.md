@@ -1,11 +1,11 @@
-Title: Status Codes - 200 page (the-internet.herokuapp.com)
+Title: Status Codes - 200 页面 (the-internet.herokuapp.com)
 
 Base URL: https://the-internet.herokuapp.com
 
-As a user, I want to view the 200 status code page so I can confirm the application returns a successful response.
+作为用户，我想查看 200 状态码页面，以便确认应用程序返回成功响应。
 
-Acceptance criteria:
-- Navigate to `/status_codes`
-- Click on the `200` link
-- Confirm that the resulting page URL contains `/status_codes/200`
-- Verify the page text contains the sentence `This page returned a 200 status code.`
+验收条件：
+- 导航到 `/status_codes`
+- 点击 `200` 链接
+- 确认结果页面 URL 包含 `/status_codes/200`
+- 验证页面文本包含句子 `This page returned a 200 status code.`

@@ -6,7 +6,7 @@ import yaml
 
 
 def load_config(path: str | Path = "test_config.yaml") -> dict:
-    """Load test_config.yaml and resolve ${VAR:-default} expressions."""
+    """加载 test_config.yaml 并解析 ${VAR:-default} 表达式。"""
     raw = Path(path).read_text(encoding="utf-8")
     return yaml.safe_load(_resolve_env_vars(raw))
 

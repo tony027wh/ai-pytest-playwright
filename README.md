@@ -1,83 +1,83 @@
 # AI Pytest-Playwright
 
-An end-to-end AI-powered test automation pipeline that turns plain-English user stories into running Playwright tests, analyzes failures with Claude, and produces a styled HTML report.
+一个端到端的 AI 驱动测试自动化流水线，将纯英文的用户故事转化为可运行的 Playwright 测试，用 OpenCode 分析失败原因，并生成样式化的 HTML 报告。
 
 ---
 
-## Table of Contents
+## 目录
 
 - [AI Pytest-Playwright](#ai-pytest-playwright)
-  - [Table of Contents](#table-of-contents)
-  - [Tech Stack](#tech-stack)
-  - [Project Structure](#project-structure)
-  - [Installation](#installation)
-  - [Workflow: Run All Tests](#workflow-run-all-tests)
-  - [Workflow: Add a New Story and Test It](#workflow-add-a-new-story-and-test-it)
-  - [Individual Commands Reference](#individual-commands-reference)
-  - [UI Dashboard](#ui-dashboard)
-  - [Claude Code Skill](#claude-code-skill)
-  - [How AI Analysis Works](#how-ai-analysis-works)
-  - [Cross-Repo Utility Design](#cross-repo-utility-design)
-    - [How it works](#how-it-works)
-    - [Adding this to another repo](#adding-this-to-another-repo)
-    - [Shared utilities](#shared-utilities)
-  - [Roadmap](#roadmap)
+  - [目录](#目录)
+  - [技术栈](#技术栈)
+  - [项目结构](#项目结构)
+  - [安装](#安装)
+  - [工作流程：运行所有测试](#工作流程运行所有测试)
+  - [工作流程：添加新故事并测试](#工作流程添加新故事并测试)
+  - [独立命令参考](#独立命令参考)
+  - [UI 仪表盘](#ui-仪表盘)
+  - [OpenCode 技能](#opencode-技能)
+  - [AI 分析工作原理](#ai-分析工作原理)
+  - [跨仓库工具设计](#跨仓库工具设计)
+    - [工作原理](#工作原理)
+    - [将其添加到另一个仓库](#将其添加到另一个仓库)
+    - [共享工具集](#共享工具集)
+  - [路线图](#路线图)
 
 ---
 
-## Tech Stack
+## 技术栈
 
 - **Python 3.13+**
 - **pytest + pytest-playwright**
-- **Claude Code CLI** — no API keys needed, uses your Claude Code subscription
-- **FastAPI** for the local UI server
-- **Dark-mode HTML dashboard** with external CSS
+- **OpenCode CLI** — 无需 API 密钥，使用你的 OpenCode 订阅
+- **FastAPI** 用于本地 UI 服务器
+- **深色模式 HTML 仪表盘**，使用外部 CSS
 
 ---
 
-## Project Structure
+## 项目结构
 
 ```
 ai-pytest-playwright/
 │
-├── stories/                       # Plain-English test specifications (.md)
-├── tests/                         # Auto-generated pytest-playwright tests
-│   └── .ai-backups/               # Backups created before AI fixes
+├── stories/                       # 纯英文测试规格说明 (.md)
+├── tests/                         # 自动生成的 pytest-playwright 测试
+│   └── .ai-backups/               # AI 修复前创建的备份
 │
-├── shared_utils/                  # Reusable utility library (copy to any repo)
+├── shared_utils/                  # 可复用的工具库（可复制到任何仓库）
 │   ├── adapters/
-│   │   └── base.py                # AppAdapter ABC — abstract interface for per-repo behavior
+│   │   └── base.py                # AppAdapter 抽象基类 — 每个仓库行为的抽象接口
 │   └── core/
-│       ├── config_loader.py       # Loads test_config.yaml, resolves ${ENV_VAR:-default}
-│       ├── retry.py               # retry() and wait_for() helpers
-│       └── assertions.py         # SoftAssertions — collect failures, raise at end
+│       ├── config_loader.py       # 加载 test_config.yaml，解析 ${ENV_VAR:-default}
+│       ├── retry.py               # retry() 和 wait_for() 辅助函数
+│       └── assertions.py         # SoftAssertions — 收集失败信息，最后统一抛出
 │
 ├── adapters/
-│   └── the_internet_adapter.py   # Concrete AppAdapter for this repo's target app
+│   └── the_internet_adapter.py   # 本仓库目标应用的具体 AppAdapter 实现
 │
 ├── analyze/
-│   └── analyze_failures.py       # AI failure analysis engine
+│   └── analyze_failures.py       # AI 失败分析引擎
 ├── utils/
-│   ├── claude_client.py          # Claude CLI subprocess helpers
-│   └── test_helpers.py           # Shared test utilities
+│   ├── opencode_client.py          # OpenCode CLI 子进程辅助函数
+│   └── test_helpers.py           # 共享测试工具
 ├── server/
-│   └── server.py                 # FastAPI server
-├── ui/                           # Frontend (index.html, ui.js, ui.css, modules/)
+│   └── server.py                 # FastAPI 服务器
+├── ui/                           # 前端（index.html, ui.js, ui.css, modules/）
 │
-├── test_config.yaml              # Repo-level config: environments, browser, auth, routes
-├── generate_test.py              # Converts stories → pytest tests
-├── pipeline.py                   # Full pipeline orchestrator
-├── conftest.py                   # pytest + Playwright fixtures (config-driven)
-├── pytest.ini                    # pytest configuration
+├── test_config.yaml              # 仓库级配置：环境、浏览器、认证、路由
+├── generate_test.py              # 将故事转换为 pytest 测试
+├── pipeline.py                   # 完整流水线编排器
+├── conftest.py                   # pytest + Playwright 夹具（配置驱动）
+├── pytest.ini                    # pytest 配置
 └── requirements.txt
 ```
 
-**Data flow:**
+**数据流：**
 ```
 test_config.yaml  ←─ conftest.py  ←─ adapters/the_internet_adapter.py
-                                        │
-stories/*.md                            │ base_url, browser settings, auth
-  → generate_test.py                    │
+                                         │
+stories/*.md                             │ base_url、浏览器设置、认证
+  → generate_test.py                     │
       → tests/test_*.py ───────────────→ pytest  →  pytest-report.json  +  playwright-report/
                                               → analyze_failures.py
                                                   → ai-analysis.json  +  ai-report.html
@@ -85,7 +85,7 @@ stories/*.md                            │ base_url, browser settings, auth
 
 ---
 
-## Installation
+## 安装
 
 ```bash
 git clone https://github.com/andrewtdinh/ai-pytest-playwright.git
@@ -96,44 +96,44 @@ pip install -r requirements.txt
 playwright install
 ```
 
-No API keys required. The project uses the **Claude Code CLI** (`claude` command) bundled with your Claude Code subscription. [Get Claude Code here](https://claude.ai/code) if you haven't installed it.
+无需 API 密钥。该项目使用 **OpenCode CLI**（`opencode` 命令），该命令包含在你的 OpenCode 订阅中。如果尚未安装，请[在此获取 OpenCode](https://claude.ai/code)。
 
 ---
 
-## Workflow: Run All Tests
+## 工作流程：运行所有测试
 
-Use this when you want to run the entire suite end-to-end.
+当你想要端到端运行整个测试套件时使用。
 
-**Step 1 — Run the full pipeline**
+**步骤 1 — 运行完整流水线**
 
 ```bash
 python pipeline.py
 ```
 
-This does four things in sequence:
-1. Generates pytest tests from every story in `stories/`
-2. Runs the full pytest suite
-3. Analyzes any failures with AI
-4. Builds and opens `ai-report.html` in your browser
+这按顺序执行四件事：
+1. 从 `stories/` 中的每个故事生成 pytest 测试
+2. 运行完整的 pytest 套件
+3. 用 AI 分析所有失败
+4. 构建并在浏览器中打开 `ai-report.html`
 
-**Step 2 — Review the results**
+**步骤 2 — 查看结果**
 
-- `ai-report.html` — AI dashboard: plain-English explanations, root causes, fix suggestions, flakiness tips
-- `playwright-report/` — Traditional pytest-html report with screenshots
-- `pytest-report.json` — Raw machine-readable output
+- `ai-report.html` — AI 仪表盘：通俗易懂的解释、根本原因、修复建议、不稳定提示
+- `playwright-report/` — 带有截图的传统 pytest-html 报告
+- `pytest-report.json` — 原始的机器可读输出
 
 ---
 
-## Workflow: Add a New Story and Test It
+## 工作流程：添加新故事并测试
 
-Use this when you've written a new story and only want to generate and run that one test.
+当你编写了一个新故事，只想生成并运行这一个测试时使用。
 
-**Step 1 — Write your story**
+**步骤 1 — 编写故事**
 
-Create `stories/<slug>.md`. The filename stem becomes the test function name.
+创建 `stories/<slug>.md`。文件名主干将成为测试函数名。
 
 ```markdown
-Title: Login - valid credentials
+Title: 登录 - 有效凭据
 
 As a user, I want to log in with valid credentials so I can access the secure area.
 
@@ -146,38 +146,38 @@ Acceptance criteria:
 - Expect the success flash message to contain: `You logged into a secure area!`
 ```
 
-Notes:
-- **`Base URL:` is optional.** If omitted, `generate_test.py` uses the default from `test_config.yaml` (`environments.<default_env>.base_url`). Only include `Base URL:` when the story targets a *different* site than the repo default.
-- Use relative paths in acceptance criteria (`/login`, not the full URL).
-- The slug (filename stem) must be snake_case: `add_remove_elements.md` → `test_add_remove_elements.py`.
+注意：
+- **`Base URL:` 是可选的。** 如果省略，`generate_test.py` 使用 `test_config.yaml` 中的默认值（`environments.<default_env>.base_url`）。仅当故事针对与仓库默认值**不同**的站点时才包含 `Base URL:`。
+- 验收标准中使用相对路径（`/login`，而非完整 URL）。
+- slug（文件名主干）必须使用蛇形命名法：`add_remove_elements.md` → `test_add_remove_elements.py`。
 
-**Step 2 — Generate the test**
+**步骤 2 — 生成测试**
 
 ```bash
 python generate_test.py --story <slug>.md
 ```
 
-Example:
+示例：
 ```bash
 python generate_test.py --story login.md
 ```
 
-This creates `tests/test_login.py`. Review it and adjust any locators if needed.
+这将创建 `tests/test_login.py`。检查并根据需要调整定位器。
 
-**Step 3 — Run only that test**
+**步骤 3 — 仅运行该测试**
 
 ```bash
 python -m pytest tests/test_<slug>.py -v
 ```
 
-**Step 4 — If it fails, get AI analysis**
+**步骤 4 — 如果失败，获取 AI 分析**
 
 ```bash
 python -m pytest tests/test_login.py -v --json-report --json-report-file=pytest-report.json
 python analyze/analyze_failures.py --html
 ```
 
-Or use the pipeline shortcut for steps 2–4 in one command:
+或者使用流水线快捷方式，一步完成步骤 2-4：
 
 ```bash
 python pipeline.py --story login.md --test test_login.py
@@ -185,99 +185,99 @@ python pipeline.py --story login.md --test test_login.py
 
 ---
 
-## Individual Commands Reference
+## 独立命令参考
 
 ```bash
-# Generate tests
-python generate_test.py                          # all stories
-python generate_test.py --story login.md         # one story
+# 生成测试
+python generate_test.py                          # 所有故事
+python generate_test.py --story login.md         # 单个故事
 
-# Run tests
-python -m pytest                                 # all tests
-python -m pytest tests/test_login.py -v          # one test
-python -m pytest --json-report --json-report-file=pytest-report.json  # with JSON output
+# 运行测试
+python -m pytest                                 # 所有测试
+python -m pytest tests/test_login.py -v          # 单个测试
+python -m pytest --json-report --json-report-file=pytest-report.json  # 输出 JSON 格式
 
-# Analyze failures (requires pytest-report.json)
-python analyze/analyze_failures.py               # JSON output only
-python analyze/analyze_failures.py --html        # JSON + HTML report (auto-opens)
+# 分析失败（需要 pytest-report.json）
+python analyze/analyze_failures.py               # 仅 JSON 输出
+python analyze/analyze_failures.py --html        # JSON + HTML 报告（自动打开）
 
-# Full pipeline
-python pipeline.py                               # all stories + all tests
-python pipeline.py --story login.md --test test_login.py  # one story + one test
+# 完整流水线
+python pipeline.py                               # 所有故事 + 所有测试
+python pipeline.py --story login.md --test test_login.py  # 单个故事 + 单个测试
 
-# UI server
+# UI 服务器
 uvicorn server.server:app --port 5173
 ```
 
 ---
 
-## UI Dashboard
+## UI 仪表盘
 
 ```bash
 uvicorn server.server:app --port 5173
 ```
 
-Open `http://localhost:5173`.
+打开 `http://localhost:5173`。
 
-**Run Bar** — trigger the full pipeline or individual steps (Generate / Run Tests / Analyze) with a live status chip.
+**运行栏** — 触发完整流水线或单个步骤（生成 / 运行测试 / 分析），带有实时状态指示器。
 
-**Editor** — write or edit stories and tests with validation, upload up to 5 stories at once, or use the AI Story Assistant wizard to build a story from requirements and expected outcomes.
+**编辑器** — 编写或编辑故事和测试，支持验证、一次上传最多 5 个故事，或使用 AI 故事助手向导根据需求和预期结果构建故事。
 
-**Saved Stories / Generated Tests** — browse, edit, delete, or run individual stories or tests from the sidebar.
+**已保存故事 / 已生成测试** — 从侧边栏浏览、编辑、删除或运行单个故事或测试。
 
-**Run Console** — step-by-step progress (Validate → Save → Generate → Run → Analyze → Report), live logs, and a **Fix with AI** button on failed tests that auto-applies a Claude-generated fix, creates a backup in `tests/.ai-backups/`, re-runs the test, and shows a fix summary.
+**运行控制台** — 逐步进度（验证 → 保存 → 生成 → 运行 → 分析 → 报告）、实时日志，以及在失败测试上的 **使用 AI 修复** 按钮，自动应用 OpenCode 生成的修复、在 `tests/.ai-backups/` 中创建备份、重新运行测试，并显示修复摘要。
 
-**Report Tabs** — embedded AI analysis report and traditional Playwright HTML report with screenshots, side by side.
+**报告标签页** — 嵌入的 AI 分析报告和传统的 Playwright HTML 报告（含截图），并排显示。
 
 ---
 
-## Claude Code Skill
+## OpenCode 技能
 
-This repo ships a Claude Code skill at `.claude/skills/pytest-playwright/SKILL.md`.
+本仓库附带一个 OpenCode 技能，位于 `.claude/skills/pytest-playwright/SKILL.md`。
 
-When working inside Claude Code, type:
+在 OpenCode 中工作时，输入：
 
 ```
 /pytest-playwright
 ```
 
-This loads the skill and gives Claude full context about this project: the story format, test file conventions, all available commands, locator best practices, wait strategies, POM guidance, and an ad-hoc exploration pattern for quick locator debugging.
+这将加载该技能，并为 OpenCode 提供关于此项目的完整上下文：故事格式、测试文件约定、所有可用命令、定位器最佳实践、等待策略、POM 指南，以及用于快速定位器调试的临时探索模式。
 
-**When to use it:**
-- Writing a new story or test file
-- Debugging a failing test
-- Asking Claude to explain a locator or wait strategy
-- Getting help with the full pipeline
-
----
-
-## How AI Analysis Works
-
-After pytest runs, failure metadata is passed to Claude via the CLI:
-
-- Error message and full traceback
-- Test node ID
-- stdout/stderr logs
-- The original user story (for context about intent)
-
-Claude returns a structured HTML snippet for each failure containing:
-
-1. **Plain-English Explanation** — why it likely failed, grounded in the real behavior of the page under test
-2. **Probable Root Causes** — 2–3 concrete technical causes
-3. **Suggested Test Fixes** — specific pytest-playwright code improvements
-4. **Flakiness Mitigation** — ways to reduce intermittent failures
-
-Output is written to `ai-analysis.json` (structured data) and `ai-report.html` (styled dashboard).
+**何时使用：**
+- 编写新故事或测试文件
+- 调试失败的测试
+- 请 OpenCode 解释定位器或等待策略
+- 获取完整流水线的帮助
 
 ---
 
-## Cross-Repo Utility Design
+## AI 分析工作原理
 
-`shared_utils/` is a portable utility library built to work across multiple repos targeting different applications.
+pytest 运行后，失败元数据通过 CLI 传递给 OpenCode：
 
-### How it works
+- 错误消息和完整回溯
+- 测试节点 ID
+- stdout/stderr 日志
+- 原始用户故事（用于了解意图上下文）
 
-`test_config.yaml` (one per repo) declares the target app's properties:
+OpenCode 为每个失败返回结构化的 HTML 片段，包含：
+
+1. **通俗易懂的解释** — 基于被测页面的真实行为说明可能失败的原因
+2. **可能的根本原因** — 2-3 个具体的技术原因
+3. **建议的测试修复** — 特定的 pytest-playwright 代码改进
+4. **不稳定缓解措施** — 减少间歇性失败的方法
+
+输出写入 `ai-analysis.json`（结构化数据）和 `ai-report.html`（样式化仪表盘）。
+
+---
+
+## 跨仓库工具设计
+
+`shared_utils/` 是一个可移植的工具库，设计用于跨多个仓库、针对不同应用工作。
+
+### 工作原理
+
+`test_config.yaml`（每个仓库一个）声明目标应用的属性：
 
 ```yaml
 app:
@@ -307,12 +307,12 @@ routes:
   dashboard: "/dashboard"
 ```
 
-`conftest.py` feeds the config into pytest-playwright's built-in fixture hooks (`browser_context_args`, `browser_type_launch_args`), so `base_url`, viewport, and browser settings flow into every test automatically — no duplication in test files or stories.
+`conftest.py` 将配置注入 pytest-playwright 的内置夹具钩子（`browser_context_args`、`browser_type_launch_args`），因此 `base_url`、视口和浏览器设置自动流入每个测试 — 无需在测试文件或故事中重复配置。
 
-### Adding this to another repo
+### 将其添加到另一个仓库
 
-1. Copy `shared_utils/` into the new repo.
-2. Write `adapters/my_app_adapter.py` implementing the three required methods:
+1. 将 `shared_utils/` 复制到新仓库中。
+2. 编写 `adapters/my_app_adapter.py`，实现三个必需方法：
 
 ```python
 from playwright.sync_api import Page
@@ -328,15 +328,15 @@ class MyAppAdapter(AppAdapter):
         page.wait_for_url("**/dashboard")
 
     def seed_data(self) -> dict:
-        # create test fixtures via API or DB; return refs for cleanup
+        # 通过 API 或数据库创建测试夹具；返回用于清理的引用
         return {}
 
     def cleanup_data(self, data: dict) -> None:
         pass
 ```
 
-3. Write `test_config.yaml` for the new repo.
-4. In `conftest.py`, return your adapter from `app_adapter` — everything else is inherited:
+3. 为新仓库编写 `test_config.yaml`。
+4. 在 `conftest.py` 中，从 `app_adapter` 返回你的适配器 — 其余一切都继承：
 
 ```python
 import pytest
@@ -351,27 +351,27 @@ def repo_config():
 def app_adapter(repo_config):
     return MyAppAdapter(repo_config)
 
-# browser_type_launch_args, browser_context_args, auth_state,
-# and authenticated_page fixtures follow the same pattern as this repo's conftest.py
+# browser_type_launch_args、browser_context_args、auth_state
+# 和 authenticated_page 夹具遵循与本仓库 conftest.py 相同的模式
 ```
 
-### Shared utilities
+### 共享工具集
 
-| Module | What it provides |
+| 模块 | 提供的功能 |
 |---|---|
-| `shared_utils.adapters.base.AppAdapter` | Abstract base: `login`, `seed_data`, `cleanup_data` (required); `after_navigation`, `setup_context`, `on_auth_failure` (overridable); `base_url`, `route`, `navigate_to` (config-derived) |
-| `shared_utils.core.config_loader.load_config` | Loads `test_config.yaml` and resolves `${VAR:-default}` from environment |
-| `shared_utils.core.retry.retry` | Retry a callable N times with delay |
-| `shared_utils.core.retry.wait_for` | Poll a condition until True or timeout |
-| `shared_utils.core.assertions.SoftAssertions` | Collect multiple failures and raise them all at once |
+| `shared_utils.adapters.base.AppAdapter` | 抽象基类：`login`、`seed_data`、`cleanup_data`（必需）；`after_navigation`、`setup_context`、`on_auth_failure`（可覆盖）；`base_url`、`route`、`navigate_to`（配置派生） |
+| `shared_utils.core.config_loader.load_config` | 加载 `test_config.yaml` 并从环境变量解析 `${VAR:-default}` |
+| `shared_utils.core.retry.retry` | 重试可调用对象 N 次，带延迟 |
+| `shared_utils.core.retry.wait_for` | 轮询条件直到为真或超时 |
+| `shared_utils.core.assertions.SoftAssertions` | 收集多个失败并一次性全部抛出 |
 
 ---
 
-## Roadmap
+## 路线图
 
-- Multi-story batch generation
-- Test-to-story reverse engineering
-- Flaky test scoring over time
-- Hit-map UI of frequent failures
-- CI pipeline integration
-- Slack/Teams bot that posts AI insights
+- 多故事批量生成
+- 测试到故事的逆向工程
+- 随时间推移的不稳定测试评分
+- 频繁失败的点击热力图
+- CI 流水线集成
+- 发布 AI 洞察的 Slack/Teams 机器人

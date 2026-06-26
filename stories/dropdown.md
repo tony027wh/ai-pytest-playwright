@@ -1,11 +1,11 @@
-Title: Dropdown - select option (the-internet.herokuapp.com)
+Title: Dropdown - 选择选项 (the-internet.herokuapp.com)
 
 Base URL: https://the-internet.herokuapp.com
 
-As a user, I want to select an option from a dropdown so I can change its value.
+作为用户，我想从下拉菜单中选择一个选项，以便更改其值。
 
-Acceptance criteria:
-- Navigate to `/dropdown`
-- Verify the dropdown is present
-- Select `Option 2` from the dropdown
-- Verify that `Option 2` is the currently selected value
+验收条件：
+- 导航到 `/dropdown`
+- 验证下拉菜单存在
+- 从下拉菜单中选择 `Option 2`
+- 验证当前选中的值是 `Option 2`

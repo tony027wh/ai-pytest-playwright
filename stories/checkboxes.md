@@ -1,13 +1,13 @@
-Title: Checkboxes - toggle behavior (the-internet.herokuapp.com)
+Title: Checkboxes - 切换行为 (the-internet.herokuapp.com)
 
 Base URL: https://the-internet.herokuapp.com
 
-As a user, I want to toggle checkboxes on and off so I can control their state.
+作为用户，我想打开和关闭复选框，以便控制它们的状态。
 
-Acceptance criteria:
-- Navigate to `/checkboxes`
-- There should be two checkboxes on the page
-- Ensure the first checkbox is checked (if not, click it)
-- Ensure the second checkbox is unchecked (if it is checked, click it to uncheck)
-- Verify the first checkbox is in the checked state
-- Verify the second checkbox is in the unchecked state
+验收条件：
+- 导航到 `/checkboxes`
+- 页面上应有两个复选框
+- 确保第一个复选框已选中（如果没有，点击它）
+- 确保第二个复选框未选中（如果已选中，点击它以取消选中）
+- 验证第一个复选框处于选中状态
+- 验证第二个复选框处于未选中状态

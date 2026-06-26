@@ -1,11 +1,11 @@
-Title: Search Wikipedia for HDMI Cables  
+Title: 在 Wikipedia 上搜索 HDMI 线缆  
 Story:  
-As a user, I want to search Wikipedia for "hdmi cables" so that I can find articles related to HDMI cables.  
+作为用户，我想在 Wikipedia 上搜索 "hdmi cables"，以便找到与 HDMI 线缆相关的文章。  
 
 Acceptance:  
-- The search query "hdmi cables" is entered in Wikipedia's search bar.  
-- The search results page loads successfully.  
-- The results page contains articles relevant to HDMI cables.  
+- 搜索查询 "hdmi cables" 被输入到 Wikipedia 的搜索栏中。  
+- 搜索结果页成功加载。  
+- 结果页包含与 HDMI 线缆相关的文章。  
 
 Inputs:  
 Requirements: Go to Wikipedia, search for "hdmi cables"  

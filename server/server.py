@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from utils.claude_client import claude_prompt
+from utils.opencode_client import opencode_prompt as claude_prompt
 from utils.test_helpers import validate_story_text
 
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -24,7 +24,7 @@ app = FastAPI()
 _run_lock = asyncio.Lock()
 
 
-# ─── Validators ───────────────────────────────────────────────────────────────
+# ─── 校验器 ───────────────────────────────────────────────────────────────
 
 def safe_file_name(input_str: str) -> str:
     result = re.sub(r"[^a-z0-9]+", "_", str(input_str).strip().lower())
@@ -70,7 +70,7 @@ def is_duplicate_story(content: str) -> Optional[str]:
     return None
 
 
-# ─── Run helper ───────────────────────────────────────────────────────────────
+# ─── 运行辅助函数 ─────────────────────────────────────────────────────────
 
 async def run_command(command: str) -> dict:
     if _run_lock.locked():
@@ -95,7 +95,7 @@ async def run_command(command: str) -> dict:
         }
 
 
-# ─── API routes ───────────────────────────────────────────────────────────────
+# ─── API 路由 ─────────────────────────────────────────────────────────────
 
 @app.get("/api/health")
 async def health():
@@ -123,7 +123,7 @@ async def save_story(request: Request):
     if duplicate:
         return JSONResponse(
             status_code=409,
-            content={"ok": False, "error": f"Duplicate story content matches {duplicate}."},
+            content={"ok": False, "error": f"故事内容重复，匹配文件：{duplicate}。"},
         )
 
     STORIES_DIR.mkdir(exist_ok=True)
@@ -288,34 +288,34 @@ async def ai_story(request: Request):
     if not requirements or not expected:
         return JSONResponse(
             status_code=400,
-            content={"ok": False, "error": "Requirements and expected outcome are required."},
+            content={"ok": False, "error": "需求描述和预期结果是必填项。"},
         )
 
-    prompt = f"""You are a QA analyst writing user stories for test automation.
+    prompt = f"""你是一名 QA 分析师，负责编写用户故事以支持测试自动化。
 
-Create a concise story in plain English. Format:
+创建一个简洁的故事，使用中文。格式如下：
 
-Title: <short title>
-Base URL: <optional if provided>
-Story:
-As a user, I want to ...
+标题：<简短标题>
+基础 URL：<如果提供则填写>
+故事：
+作为一个用户，我想要 ...
 
-Acceptance:
+验收条件：
 - ...
 - ...
 - ...
 
-Inputs:
-Requirements: {requirements}
-Selectors/UI: {selectors}
-Path/Steps: {user_path}
-Expected outcome: {expected}""".strip()
+输入：
+需求：{requirements}
+选择器/UI：{selectors}
+路径/步骤：{user_path}
+预期结果：{expected}""".strip()
 
     try:
-        story_text = claude_prompt("You write crisp user stories for QA. No markdown.", prompt)
+        story_text = claude_prompt("你撰写简洁的 QA 用户故事，不包含 markdown 格式。", prompt)
         return {"ok": True, "story": story_text}
     except Exception:
-        return JSONResponse(status_code=500, content={"ok": False, "error": "AI generation failed."})
+        return JSONResponse(status_code=500, content={"ok": False, "error": "AI 生成失败。"})
 
 
 @app.post("/api/ai/fix-test")
@@ -329,15 +329,15 @@ async def ai_fix_test(request: Request):
 
     safe = safe_test_file(test_file)
 
-    # If testFile not directly usable, try to derive from testTitle (nodeid format)
+    # 如果 testFile 无法直接使用，尝试从 testTitle（nodeid 格式）推导
     if not safe and test_title:
-        # testTitle may be a nodeid like "tests/test_login.py::test_login"
-        # or just "test_login.py"
+        # testTitle 可能是 nodeid 格式，如 "tests/test_login.py::test_login"
+        # 或者只是 "test_login.py"
         m = re.search(r"(test_[^:/\s]+\.py)", test_title)
         if m:
             safe = safe_test_file(m.group(1))
 
-    # Last resort: search test files for matching function name
+    # 最后手段：在所有测试文件中搜索匹配的函数名
     if not safe and test_title:
         func_match = re.search(r"::(\w+)$", test_title)
         func_name = func_match.group(1) if func_match else None
@@ -357,7 +357,7 @@ async def ai_fix_test(request: Request):
 
     current_test = test_path.read_text(encoding="utf-8")
 
-    # Load story context
+    # 加载故事上下文
     story_context = ""
     try:
         slug = re.sub(r"^test_", "", Path(safe).stem)
@@ -367,50 +367,50 @@ async def ai_fix_test(request: Request):
     except Exception:
         pass
 
-    prompt = f"""You are a senior QA engineer specializing in Playwright.
-You will receive a failing test and logs. Return the FULL corrected test file contents only.
-Do not include markdown fences or commentary.
+    prompt = f"""你是一名资深 QA 工程师，专注于 Playwright 测试。
+你将收到一个失败的测试及其日志。请返回完整的修正后测试文件内容。
+不要包含 markdown 代码块标记或任何额外说明。
 
-Test title: {test_title}
-Test file: {safe}
+测试标题：{test_title}
+测试文件：{safe}
 
-Current test file:
+当前测试文件：
 {current_test}
 
-Run stdout:
+运行标准输出：
 {stdout}
 
-Run stderr:
+运行错误输出：
 {stderr}
 
-Related story (if any):
+相关故事（如果有）：
 {story_context}
 
-Requirements:
-- Preserve the file structure and imports if possible.
-- Fix the test based on the real behavior of https://the-internet.herokuapp.com when applicable.
-- Return ONLY the corrected file contents.""".strip()
+要求：
+- 尽可能保留文件结构和导入语句。
+- 根据 https://the-internet.herokuapp.com 的实际行为来修复测试（如果适用）。
+- 只返回修正后的文件内容。""".strip()
 
     try:
-        fixed_content = claude_prompt("You fix pytest-playwright tests. Return full file contents only.", prompt)
+        fixed_content = claude_prompt("你修复 pytest-playwright 测试，只返回完整的文件内容。", prompt)
         if not fixed_content:
-            return JSONResponse(status_code=500, content={"ok": False, "error": "AI returned empty response."})
+            return JSONResponse(status_code=500, content={"ok": False, "error": "AI 返回空响应。"})
 
-        # Generate summary
+        # 生成摘要
         summary = ""
         try:
-            summary_prompt = f"""Summarize the fix in 1-2 sentences, focusing on what changed and why.
+            summary_prompt = f"""用 1-2 句话概括此次修复，重点说明修改了什么以及为什么修改。
 
-Original test:
+原始测试：
 {current_test[:4000]}
 
-Updated test:
+更新后的测试：
 {fixed_content[:4000]}""".strip()
-            summary = claude_prompt("Summarize test fixes concisely.", summary_prompt)
+            summary = claude_prompt("简洁地总结测试修复内容。", summary_prompt)
         except Exception:
             pass
 
-        # Backup and write
+        # 备份并写入
         backup_dir = TESTS_DIR / ".ai-backups"
         backup_dir.mkdir(exist_ok=True)
         backup_path = backup_dir / f"{safe}.{int(time.time() * 1000)}.bak"
@@ -424,10 +424,10 @@ Updated test:
             "summary": summary,
         }
     except Exception:
-        return JSONResponse(status_code=500, content={"ok": False, "error": "AI fix failed."})
+        return JSONResponse(status_code=500, content={"ok": False, "error": "AI 修复失败。"})
 
 
-# ─── Static file serving ──────────────────────────────────────────────────────
+# ─── 静态文件服务 ──────────────────────────────────────────────────────────
 
 @app.get("/ai-report.html")
 async def serve_ai_report():
@@ -460,7 +460,7 @@ async def serve_playwright_report(path: str):
         file_path = report_root / "index.html"
     else:
         file_path = report_root / path
-    # Prevent path traversal
+    # 防止路径遍历攻击
     try:
         file_path.resolve().relative_to(report_root.resolve())
     except ValueError:
@@ -474,7 +474,7 @@ async def serve_playwright_report(path: str):
     return FileResponse(file_path)
 
 
-# Mount UI static files last (catch-all)
+# 最后挂载 UI 静态文件（兜底路由）
 if UI_DIR.exists():
     app.mount("/", StaticFiles(directory=str(UI_DIR), html=True), name="ui")
 

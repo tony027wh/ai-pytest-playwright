@@ -11,7 +11,7 @@ def config_base_url() -> str:
         adapter_env = cfg["app"]["default_env"]
         return cfg["environments"].get(adapter_env, {}).get("base_url", "")
     except Exception as e:
-        print(f"Warning: could not read base_url from test_config.yaml: {e}", file=sys.stderr)
+        print(f"警告: 无法从 test_config.yaml 读取 base_url: {e}", file=sys.stderr)
         return ""
 
 
@@ -75,7 +75,7 @@ def nodeid_to_slug(nodeid: str) -> str:
     parts = nodeid.split("::")
     if not parts:
         return ""
-    stem = Path(parts[0]).stem  # e.g. "test_login"
+    stem = Path(parts[0]).stem  # 例如 "test_login"
     return stem[5:] if stem.startswith("test_") else stem
 
 
@@ -85,7 +85,7 @@ def validate_story_text(text: str) -> dict:
 
     t = (text or "").strip()
     if not t:
-        errors.append("Story text is empty.")
+        errors.append("故事文本为空。")
 
     has_acceptance = bool(re.search(
         r"(?:^|\n)\s*(acceptance(?:\s+criteria)?|ac)\s*:?\s*",
@@ -94,12 +94,12 @@ def validate_story_text(text: str) -> dict:
     has_bullets = bool(re.search(r"(^|\n)\s*-\s+.+", t, re.MULTILINE))
 
     if not has_acceptance:
-        warnings.append("Missing an 'Acceptance:' section (recommended).")
+        warnings.append("缺少 'Acceptance:' 部分（推荐添加）。")
     if not has_bullets:
-        warnings.append("No bullet steps found (e.g. '- Navigate to ...').")
+        warnings.append("未找到步骤列表（例如 '- Navigate to ...'）。")
 
     has_url = bool(re.search(r"https?://\S+", t, re.IGNORECASE))
     if not has_url:
-        warnings.append("No Base URL in story — repo default from test_config.yaml will be used.")
+        warnings.append("故事中未提供 Base URL —— 将使用 test_config.yaml 中的仓库默认值。")
 
     return {"ok": len(errors) == 0, "errors": errors, "warnings": warnings}

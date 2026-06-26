@@ -5,7 +5,7 @@ T = TypeVar("T")
 
 
 def retry(fn: Callable[[], T], attempts: int = 3, delay: float = 0.5) -> T:
-    """Retry fn up to attempts times, sleeping delay seconds between tries."""
+    """重试 fn 最多 attempts 次，每次间隔 delay 秒。"""
     last_exc: Exception | None = None
     for _ in range(attempts):
         try:
@@ -17,7 +17,7 @@ def retry(fn: Callable[[], T], attempts: int = 3, delay: float = 0.5) -> T:
 
 
 def wait_for(condition: Callable[[], bool], timeout: float = 10.0, interval: float = 0.5) -> bool:
-    """Poll condition until True or timeout (seconds). Returns True if met."""
+    """轮询 condition 直到返回 True 或超时（秒）。条件满足时返回 True。"""
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         if condition():

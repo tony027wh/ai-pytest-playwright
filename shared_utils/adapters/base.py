@@ -9,38 +9,38 @@ class AppAdapter(ABC):
     def __init__(self, config: dict):
         self.config = config
 
-    # ── Must implement per repo ────────────────────────────────────────
+    # ── 每个仓库必须实现 ───────────────────────────────────────────────
 
     @abstractmethod
     def login(self, page: Page) -> None:
-        """Drive the login UI/API flow to completion."""
+        """驱动登录 UI/API 流程直至完成。"""
         ...
 
     @abstractmethod
     def seed_data(self) -> dict:
-        """Create test fixtures; return references needed for cleanup."""
+        """创建测试夹具；返回清理所需的引用。"""
         ...
 
     @abstractmethod
     def cleanup_data(self, data: dict) -> None:
-        """Tear down anything created by seed_data."""
+        """清理 seed_data 创建的所有内容。"""
         ...
 
-    # ── Override when your app needs it (safe default = no-op) ────────
+    # ── 当应用需要时覆写（安全默认值 = 空操作）────────────────────────
 
     def after_navigation(self, page: Page) -> None:
-        """Dismiss cookie banners, modals, etc. Called after every goto."""
+        """关闭 Cookie 横幅、弹窗等。每次 goto 后调用。"""
         pass
 
     def setup_context(self, context: BrowserContext) -> None:
-        """Extra context-level setup: mock routes, inject headers, etc."""
+        """额外的上下文级别设置：模拟路由、注入请求头等。"""
         pass
 
     def on_auth_failure(self, page: Page) -> None:
-        """Called when auth state is detected as stale. Default: re-login."""
+        """检测到认证状态过期时调用。默认行为：重新登录。"""
         self.login(page)
 
-    # ── Derived from config (no override needed) ───────────────────────
+    # ── 从配置派生（无需覆写）──────────────────────────────────────────
 
     def base_url(self, env: str | None = None) -> str:
         env = env or self._resolve_env()

@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from utils.claude_client import claude_prompt
+from utils.opencode_client import opencode_prompt as claude_prompt
 from utils.test_helpers import collect_failed_tests, config_base_url, nodeid_to_slug
 
 REPORT_CSS = """
@@ -362,9 +362,9 @@ def build_html(analyses: list) -> str:
         <h2>{a['title']}</h2>
         <span class="badge-status">{a.get('status', 'unknown')}</span>
       </div>
-      <p class="meta"><span>Project:</span> {a.get('project', 'n/a')}</p>
+      <p class="meta"><span>项目:</span> {a.get('project', 'n/a')}</p>
       <details open class="details">
-        <summary>AI Analysis</summary>
+        <summary>AI 分析</summary>
         <div class="analysis">
           {a['analysis']}
         </div>
@@ -373,10 +373,10 @@ def build_html(analyses: list) -> str:
 """)
 
     return f"""<!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <title>AI Pytest Failure Analysis</title>
+  <title>AI Pytest 失败分析报告</title>
   <link rel="stylesheet" href="ai-report.css" />
 </head>
 <body>
@@ -385,23 +385,23 @@ def build_html(analyses: list) -> str:
       <div class="header-left">
         <div class="header-logo"><span>AI</span></div>
         <div>
-          <h1>AI Pytest Failure Analysis</h1>
-          <p>Run insights generated on {now}</p>
+          <h1>AI Pytest 失败分析报告</h1>
+          <p>运行洞察生成于 {now}</p>
         </div>
       </div>
       <div class="header-right">
-        <div class="tagline">INTELLIGENT TEST TRIAGE</div>
+        <div class="tagline">智能测试分类</div>
         <div class="badge-chip">
           <span class="badge-dot"></span>
-          Live AI assistant enabled
+          AI 助手已启用
         </div>
       </div>
     </header>
 
     <main>
       <div class="summary">
-        <div class="pill">Failed tests analyzed: {len(analyses)}</div>
-        <div class="pill">pytest JSON → AI insight</div>
+        <div class="pill">已分析的失败测试: {len(analyses)}</div>
+        <div class="pill">pytest JSON → AI 洞察</div>
       </div>
 
       {"".join(sections)}
@@ -412,15 +412,15 @@ def build_html(analyses: list) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Analyze pytest failures with AI")
-    parser.add_argument("--html", action="store_true", help="Also generate HTML report")
+    parser = argparse.ArgumentParser(description="使用 AI 分析 pytest 测试失败原因")
+    parser.add_argument("--html", action="store_true", help="同时生成 HTML 报告")
     args = parser.parse_args()
 
     project_root = Path(__file__).parent.parent
     report_path = project_root / "pytest-report.json"
 
     if not report_path.exists():
-        print("pytest-report.json not found. Run pytest first.", file=sys.stderr)
+        print("未找到 pytest-report.json，请先运行 pytest。", file=sys.stderr)
         sys.exit(1)
 
     report = json.loads(report_path.read_text(encoding="utf-8"))
@@ -436,38 +436,38 @@ def main() -> None:
         story_path = project_root / "stories" / f"{slug}.md"
         if story_path.exists():
             story_text = story_path.read_text(encoding="utf-8")
-            story_context = f"\n\nRelated user story (including Base URL and acceptance criteria):\n{story_text}"
+            story_context = f"\n\n相关用户故事（包含 Base URL 和验收标准）:\n{story_text}"
 
-        prompt = f"""You are a senior QA engineer specializing in Playwright.
+        prompt = f"""你是一名资深 QA 工程师，专攻 Playwright。
 
-The application under test is at:
+被测应用地址:
 {app_base_url}
 
-Test: {nodeid}
-Overall status: {test['outcome']}
+测试用例: {nodeid}
+总体状态: {test['outcome']}
 
-Error message:
+错误信息:
 {test['crash_message'] or 'N/A'}
 
-Full traceback:
+完整回溯:
 {test['longrepr'] or 'N/A'}
 {story_context}
 
-Use your knowledge of this demo application and the provided Base URL + story details to ground your answer in the real behavior of that page.
+请利用你对这个演示应用的了解以及提供的 Base URL 和故事详情，将你的回答建立在该页面的真实行为之上。
 
-Tasks:
-Return your answer as an HTML snippet only (no <html> or <body> tags).
-Use headings (<h3>), paragraphs (<p>), ordered/unordered lists (<ol>, <ul>), and <pre><code> for code.
-Do NOT use markdown, do NOT include backticks.
+任务:
+请仅返回 HTML 片段作为答案（不要包含 <html> 或 <body> 标签）。
+使用标题（<h3>）、段落（<p>）、有序/无序列表（<ol>、<ul>）以及 <pre><code> 展示代码。
+不要使用 Markdown，不要包含反引号。
 
-Include:
-1. A short heading "Plain-English Explanation" and a paragraph explaining why this test likely failed, referencing the actual behavior of the page at the given path when you can infer it.
+内容要求:
+1. 一个简短标题“通俗易懂的解释”和一个段落，说明该测试可能失败的原因，尽可能结合给定路径对应页面的实际行为进行推断。
 
-2. A heading "Probable Root Causes" with a bulleted or numbered list of 2-3 items. Use realistic causes based on the real page under test.
+2. 一个标题“可能的根本原因”，包含 2-3 个项目的列表（可用无序或有序列表）。基于被测页面的真实情况给出合理的失败原因。
 
-3. A heading "Suggested Test Fixes" with a list of 2 concrete pytest-playwright fix ideas that would make the test align with the real behavior of that page.
+3. 一个标题“建议的测试修复方案”，包含 2 个具体的 pytest-playwright 修复思路，使测试与被测页面的真实行为保持一致。
 
-4. A heading "Flakiness Mitigation" with 1-2 ideas to make this test less flaky."""
+4. 一个标题“降低不稳定性的建议”，包含 1-2 个让该测试更稳定的建议。"""
 
         analysis_html = claude_prompt(None, prompt)
         analyses.append({
@@ -476,14 +476,14 @@ Include:
             "status": test["outcome"],
             "analysis": analysis_html,
         })
-        print(f"Analyzed: {nodeid}")
+        print(f"已分析: {nodeid}")
 
     json_path = project_root / "ai-analysis.json"
     json_path.write_text(json.dumps(analyses, indent=2), encoding="utf-8")
-    print(f"Saved AI analysis to: ai-analysis.json")
+    print(f"AI 分析结果已保存至: ai-analysis.json")
 
     if not failed_tests:
-        print("No failed tests found in report.")
+        print("报告中未发现失败的测试。")
 
     if args.html:
         css_path = project_root / "ai-report.css"
@@ -492,7 +492,7 @@ Include:
         html = build_html(analyses)
         html_path = project_root / "ai-report.html"
         html_path.write_text(html, encoding="utf-8")
-        print(f"HTML report written to: ai-report.html")
+        print(f"HTML 报告已写入: ai-report.html")
 
         system = platform.system()
         try:
@@ -503,8 +503,8 @@ Include:
             else:
                 subprocess.run(["xdg-open", str(html_path)], check=True)
         except Exception as e:
-            print(f"Warning: could not open report automatically: {e}", file=sys.stderr)
-            print(f"Open manually: {html_path}", file=sys.stderr)
+            print(f"警告: 无法自动打开报告: {e}", file=sys.stderr)
+            print(f"请手动打开: {html_path}", file=sys.stderr)
 
 
 if __name__ == "__main__":

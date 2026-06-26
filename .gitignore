@@ -14,18 +14,18 @@ test-results/
 tests/*.py
 !tests/.gitkeep
 
-# Generated reports
+# 生成的报告
 ai-report.html
 ai-report.css
 ai-analysis.json
 
-# Playwright auth state (contains sensitive cookies/tokens)
+# Playwright 认证状态（包含敏感的 cookies/tokens）
 .playwright/
 
 # dotenv
 .env
 .env.local
 
-# OS
+# 操作系统
 .DS_Store
 Thumbs.db

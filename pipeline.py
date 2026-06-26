@@ -12,14 +12,14 @@ def run_pipeline(story: str = None, test: str = None) -> None:
     test_cmd = [sys.executable, "-m", "pytest"]
     if test:
         test_cmd.append(f"tests/{test}")
-    subprocess.run(test_cmd)  # intentionally ignore exit code — tests may fail
+    subprocess.run(test_cmd)  # 有意忽略退出码 —— 测试可能失败
 
     subprocess.run([sys.executable, "analyze/analyze_failures.py", "--html"])
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run full AI test pipeline")
-    parser.add_argument("--story", help="Generate only this story (e.g. login.md)")
-    parser.add_argument("--test", help="Run only this test file (e.g. test_login.py)")
+    parser = argparse.ArgumentParser(description="运行完整的 AI 测试流水线")
+    parser.add_argument("--story", help="仅生成此故事（例如 login.md）")
+    parser.add_argument("--test", help="仅运行此测试文件（例如 test_login.py）")
     args = parser.parse_args()
     run_pipeline(story=args.story, test=args.test)
