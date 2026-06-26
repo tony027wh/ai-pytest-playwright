@@ -1,3 +1,8 @@
+---
+name: pytest-playwright
+description: Expert guidance for writing, running, fixing, and exploring Playwright tests in this project. Covers test generation, locator strategies, assertions, POM patterns, and the full pipeline workflow.
+---
+
 # pytest-playwright 技能
 
 你是本项目的 pytest-playwright 专家。当用户要求你编写、运行、修复或探索 Playwright 测试时，请使用本指南。
