@@ -5,16 +5,16 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from utils.claude_client import claude_prompt
-from utils.test_helpers import config_base_url, extract_base_url, strip_markdown_fences
+from utils.test_helpers import config_base_url, extract_base_url, extract_story_type, strip_markdown_fences
 
-SYSTEM_MSG = (
+SYSTEM_MSG_UI = (
     "You are a pytest-playwright test code generator. "
     "Output ONLY the complete Python code for a pytest test. "
     "Do not include any explanations, comments about the code, or markdown formatting. "
     'Start directly with "from playwright.sync_api import Page, expect".'
 )
 
-USER_MSG_TEMPLATE = """Generate a SINGLE pytest-playwright test in Python based on this user story:
+USER_MSG_TEMPLATE_UI = """Generate a SINGLE pytest-playwright test in Python based on this user story:
 
 {story}
 
@@ -31,6 +31,32 @@ Requirements:
 - Output ONLY the Python code. No explanations, no markdown, no comments.
 - Start directly with "from playwright.sync_api import Page, expect"."""
 
+SYSTEM_MSG_API = (
+    "You are a pytest test code generator for REST API testing using httpx. "
+    "Output ONLY the complete Python code for a pytest test. "
+    "Do not include any explanations, comments about the code, or markdown formatting. "
+    'Start directly with "import httpx".'
+)
+
+USER_MSG_TEMPLATE_API = """Generate a SINGLE pytest test using httpx based on this user story:
+
+{story}
+
+Requirements:
+- Start with: import httpx
+- Use pytest function: def test_{slug}():  (no page fixture — this is an API test)
+- Base URL is: {base_url}
+  Use it to construct full URLs for any relative paths (e.g. /users/1 → {base_url}/users/1).
+  If the story clearly targets a different host, use that host instead.
+- Use httpx.get(), httpx.post(), httpx.put(), httpx.patch(), httpx.delete() for HTTP calls.
+- Assert response.status_code equals the expected value.
+- Parse JSON with response.json() and assert individual fields with plain Python assertions.
+- Assert response headers via response.headers when the story requires it.
+- For secrets/tokens written as {{VARIABLE_NAME}} in the story, read them with os.environ.get("VARIABLE_NAME") and add "import os" at the top.
+- Write clear AssertionError messages, e.g. assert body["id"] == 1, f"expected id=1, got {{body['id']}}"
+- Output ONLY the Python code. No explanations, no markdown, no comments.
+- Start directly with "import httpx"."""
+
 
 def generate_for_story(story_path: Path) -> None:
     story = story_path.read_text(encoding="utf-8")
@@ -39,10 +65,17 @@ def generate_for_story(story_path: Path) -> None:
     # Story-level Base URL takes priority; fall back to repo config.
     base_url = extract_base_url(story) or config_base_url()
 
+    story_type = extract_story_type(story)
+    if story_type == "api":
+        system_msg = SYSTEM_MSG_API
+        user_msg = USER_MSG_TEMPLATE_API.format(story=story, slug=slug, base_url=base_url)
+    else:
+        system_msg = SYSTEM_MSG_UI
+        user_msg = USER_MSG_TEMPLATE_UI.format(story=story, slug=slug, base_url=base_url)
+
     out_path = Path("tests") / f"test_{slug}.py"
 
-    user_msg = USER_MSG_TEMPLATE.format(story=story, slug=slug, base_url=base_url)
-    code = claude_prompt(SYSTEM_MSG, user_msg)
+    code = claude_prompt(system_msg, user_msg)
 
     code = strip_markdown_fences(code)
 
